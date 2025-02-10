@@ -6,6 +6,8 @@ import {
   Customer,
   Service,
 } from './entity/index';
+import { User } from './entity/user.entity';
+import { Role } from './entity/role.entity';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require('dotenv').config();
@@ -27,5 +29,7 @@ export const AppDataSource = new DataSource({
   logging: false,
   entities: [Appointment, AppointmentService, Customer, Service],
   migrations: ['src/migrations/*.ts'],
+  entities: [User, Role],
+  migrations: ['src/migration/*.ts'],
   subscribers: [],
 });
