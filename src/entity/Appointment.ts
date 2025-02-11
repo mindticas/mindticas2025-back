@@ -5,11 +5,10 @@ import {
   ManyToOne,
   OneToMany,
 } from 'typeorm';
-import { Customer } from './Customer';
-import { AppointmentService } from './AppointmentService';
+import { Customer, AppointmentService } from './index';
 
 @Entity()
-export class Appointment {
+export default class Appointment {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -22,7 +21,7 @@ export class Appointment {
   @Column()
   user_id: number;
 
-  @Column()
+  @Column('decimal', { precision: 7, scale: 2 })
   total_price: number;
 
   @Column()
