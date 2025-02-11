@@ -1,9 +1,8 @@
 import { Entity, PrimaryGeneratedColumn, ManyToMany, ManyToOne } from 'typeorm';
-import { Appointment } from './Appointment';
-import { Service } from './Service';
+import { Appointment, Service } from './index';
 
 @Entity()
-export class AppointmentService {
+export default class AppointmentService {
   @PrimaryGeneratedColumn()
   id: number;
 
