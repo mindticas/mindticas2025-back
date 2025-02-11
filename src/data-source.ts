@@ -1,5 +1,11 @@
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
+import {
+  Appointment,
+  AppointmentService,
+  Customer,
+  Service,
+} from './entity/index';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require('dotenv').config();
@@ -19,7 +25,7 @@ export const AppDataSource = new DataSource({
   database: DATABASE,
   synchronize: true,
   logging: false,
-  entities: [],
+  entities: [Appointment, AppointmentService, Customer, Service],
   migrations: ['src/migrations/*.ts'],
   subscribers: [],
 });
