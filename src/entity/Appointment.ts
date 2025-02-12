@@ -3,9 +3,11 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
-  OneToMany,
+  JoinColumn,
+  ManyToMany,
+  OneToOne,
 } from 'typeorm';
-import { Customer, AppointmentService } from './index';
+import { Customer, User, Service } from './index';
 
 @Entity()
 export default class Appointment {
@@ -18,23 +20,21 @@ export default class Appointment {
   @Column()
   scheduled_at: Date;
 
-  @Column()
-  user_id: number;
-
   @Column('decimal', { precision: 7, scale: 2 })
   total_price: number;
 
   @Column()
   duration: number;
 
-  @ManyToOne(() => Customer, (customer) => customer.appointments, {
-    nullable: false,
-  })
+  @OneToOne(() => User, (user) => user.appointments)
+  @JoinColumn()
+  user: User;
+
+  @OneToOne(() => Customer, (customer) => customer.appointment)
+  @JoinColumn()
   customer: Customer;
 
-  @OneToMany(
-    () => AppointmentService,
-    (appointmentService) => appointmentService.appointment,
-  )
-  appointmentServices: AppointmentService[];
+  @ManyToMany(() => Service, (service) => service.appointment)
+  @JoinColumn()
+  services: Service[];
 }

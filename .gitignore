@@ -133,3 +133,5 @@ dist
 tmp/
 temp/
 dist/
+
+.DS_Store
