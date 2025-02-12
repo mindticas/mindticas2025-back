@@ -2,9 +2,7 @@ import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { Appointment, Customer, Service, User, Role } from './entity';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 import 'dotenv/config';
-// require('dotenv').config();
 
 const HOST = process.env.PGHOST || 'localhost';
 const PORT = parseInt(process.env.PGPORT);
