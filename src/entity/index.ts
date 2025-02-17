@@ -1,5 +1,5 @@
-export { default as Appointment } from './Appointment';
-export { default as Customer } from './Customer';
-export { default as Service } from './Service';
-export { default as User } from './User';
-export { default as Role } from './Role';
+export { Appointment } from './Appointment';
+export { Customer } from './Customer';
+export { Service } from './Service';
+export { User } from './User';
+export { Role } from './Role';

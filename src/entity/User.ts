@@ -3,18 +3,18 @@ import {
   PrimaryGeneratedColumn,
   Column,
   OneToMany,
-  OneToOne,
   JoinColumn,
+  ManyToOne,
 } from 'typeorm';
 import { Role, Appointment } from './index';
 
 @Entity()
-export default class User {
+export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ nullable: false })
-  Name: string;
+  name: string;
 
   @Column()
   phone: string;
@@ -25,7 +25,7 @@ export default class User {
   @Column()
   password: string;
 
-  @OneToOne(() => Role, (role) => role.users)
+  @ManyToOne(() => Role, (role) => role.users)
   @JoinColumn()
   role: Role;
 

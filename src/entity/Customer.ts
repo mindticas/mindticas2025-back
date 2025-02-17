@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { Appointment } from './index';
 
 @Entity()
-export default class Customer {
+export class Customer {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -13,5 +13,5 @@ export default class Customer {
   phone: string;
 
   @OneToMany(() => Appointment, (appointment) => appointment.customer)
-  appointment: Appointment[];
+  appointments: Appointment[];
 }

@@ -2,15 +2,15 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  ManyToOne,
   JoinColumn,
   ManyToMany,
-  OneToOne,
+  ManyToOne,
+  JoinTable,
 } from 'typeorm';
 import { Customer, User, Service } from './index';
 
 @Entity()
-export default class Appointment {
+export class Appointment {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -26,15 +26,17 @@ export default class Appointment {
   @Column()
   duration: number;
 
-  @OneToOne(() => User, (user) => user.appointments)
+  @ManyToOne(() => User, (user) => user.appointments)
   @JoinColumn()
   user: User;
 
-  @OneToOne(() => Customer, (customer) => customer.appointment)
+  @ManyToOne(() => Customer, (customer) => customer.appointments)
   @JoinColumn()
   customer: Customer;
 
-  @ManyToMany(() => Service, (service) => service.appointment)
-  @JoinColumn()
+  @ManyToMany(() => Service, (service) => service.appointments, {
+    cascade: true,
+  })
+  @JoinTable()
   services: Service[];
 }
