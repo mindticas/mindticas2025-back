@@ -19,5 +19,5 @@ export default class Service {
   description: string;
 
   @ManyToMany(() => Appointment, (appointment) => appointment.services)
-  appointment: Appointment[];
+  appointments: Appointment[];
 }

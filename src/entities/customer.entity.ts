@@ -13,5 +13,5 @@ export default class Customer {
   phone: string;
 
   @OneToMany(() => Appointment, (appointment) => appointment.customer)
-  appointment: Appointment[];
+  appointments: Appointment[];
 }
