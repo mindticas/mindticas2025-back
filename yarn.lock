@@ -1438,6 +1438,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/validator@npm:^13.11.8":
+  version: 13.12.2
+  resolution: "@types/validator@npm:13.12.2"
+  checksum: 10c0/64f1326c768947d756ab5bcd73f3f11a6f07dc76292aea83890d0390a9b9acb374f8df6b24af2c783271f276d3d613b78fc79491fe87edee62108d54be2e3c31
+  languageName: node
+  linkType: hard
+
 "@types/yargs-parser@npm:*":
   version: 21.0.3
   resolution: "@types/yargs-parser@npm:21.0.3"
@@ -2428,6 +2435,24 @@ __metadata:
   version: 1.4.3
   resolution: "cjs-module-lexer@npm:1.4.3"
   checksum: 10c0/076b3af85adc4d65dbdab1b5b240fe5b45d44fcf0ef9d429044dd94d19be5589376805c44fb2d4b3e684e5fe6a9b7cf3e426476a6507c45283c5fc6ff95240be
+  languageName: node
+  linkType: hard
+
+"class-transformer@npm:^0.5.1":
+  version: 0.5.1
+  resolution: "class-transformer@npm:0.5.1"
+  checksum: 10c0/19809914e51c6db42c036166839906420bb60367df14e15f49c45c8c1231bf25ae661ebe94736ee29cc688b77101ef851a8acca299375cc52fc141b64acde18a
+  languageName: node
+  linkType: hard
+
+"class-validator@npm:^0.14.1":
+  version: 0.14.1
+  resolution: "class-validator@npm:0.14.1"
+  dependencies:
+    "@types/validator": "npm:^13.11.8"
+    libphonenumber-js: "npm:^1.10.53"
+    validator: "npm:^13.9.0"
+  checksum: 10c0/946e914e47548b5081449c720ea6a4877bac63dc960e14fca4b990b56e64efe3802d12f07ec22d6420c290245b72ea2d646939239f2a3b597794e6c4c2a4f2ae
   languageName: node
   linkType: hard
 
@@ -4853,6 +4878,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"libphonenumber-js@npm:^1.10.53":
+  version: 1.11.20
+  resolution: "libphonenumber-js@npm:1.11.20"
+  checksum: 10c0/fb1010bfa5f8682dadfbd9608f76207510e13c456db96d0d534cf727efa2de005cafbb16d016046965894af0787bf567eb5a1a2688d7bb2d5f8b2eebc42437c6
+  languageName: node
+  linkType: hard
+
 "lines-and-columns@npm:^1.1.6":
   version: 1.2.4
   resolution: "lines-and-columns@npm:1.2.4"
@@ -5112,6 +5144,8 @@ __metadata:
     "@types/supertest": "npm:^2.0.11"
     "@typescript-eslint/eslint-plugin": "npm:^5.0.0"
     "@typescript-eslint/parser": "npm:^5.0.0"
+    class-transformer: "npm:^0.5.1"
+    class-validator: "npm:^0.14.1"
     dotenv: "npm:^16.4.7"
     eslint: "npm:^8.0.1"
     eslint-config-prettier: "npm:^8.3.0"
@@ -7339,6 +7373,13 @@ __metadata:
     "@types/istanbul-lib-coverage": "npm:^2.0.1"
     convert-source-map: "npm:^2.0.0"
   checksum: 10c0/968bcf1c7c88c04df1ffb463c179558a2ec17aa49e49376120504958239d9e9dad5281aa05f2a78542b8557f2be0b0b4c325710262f3b838b40d703d5ed30c23
+  languageName: node
+  linkType: hard
+
+"validator@npm:^13.9.0":
+  version: 13.12.0
+  resolution: "validator@npm:13.12.0"
+  checksum: 10c0/21d48a7947c9e8498790550f56cd7971e0e3d724c73388226b109c1bac2728f4f88caddfc2f7ed4b076f9b0d004316263ac786a17e9c4edf075741200718cd32
   languageName: node
   linkType: hard
 

@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToMany } from 'typeorm';
 import { Appointment } from './index';
 
 @Entity()
-export default class Service {
+export default class Treatment {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -18,6 +18,6 @@ export default class Service {
   @Column()
   description: string;
 
-  @ManyToMany(() => Appointment, (appointment) => appointment.services)
+  @ManyToMany(() => Appointment, (appointment) => appointment.treatments)
   appointments: Appointment[];
 }
