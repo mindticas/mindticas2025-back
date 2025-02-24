@@ -7,7 +7,7 @@ import {
   ManyToOne,
   JoinTable,
 } from 'typeorm';
-import { Customer, User, Service } from './index';
+import { Customer, User, Treatment } from './index';
 
 @Entity()
 export default class Appointment {
@@ -34,9 +34,9 @@ export default class Appointment {
   @JoinColumn()
   customer: Customer;
 
-  @ManyToMany(() => Service, (service) => service.appointments, {
+  @ManyToMany(() => Treatment, (treatment) => treatment.appointments, {
     cascade: true,
   })
   @JoinTable()
-  services: Service[];
+  treatments: Treatment[];
 }

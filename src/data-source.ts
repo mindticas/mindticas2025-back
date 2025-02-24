@@ -1,14 +1,14 @@
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
-import { Appointment, Customer, Service, User, Role } from './entity';
+import { Appointment, Customer, Treatment, User, Role } from './entities';
 
 import 'dotenv/config';
 
 const HOST = process.env.PGHOST || 'localhost';
-const PORT = parseInt(process.env.PGPORT);
-const USERNAME = process.env.PGUSER;
-const PASSWORD = process.env.PGPASSWORD || 'undefined';
-const DATABASE = process.env.PGDATABASE;
+const PORT = parseInt(process.env.PGPORT || '5432', 10);
+const USERNAME = process.env.PGUSER || 'postgres';
+const PASSWORD = process.env.PGPASSWORD || 'password';
+const DATABASE = process.env.PGDATABASE || 'mydatabase';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -17,9 +17,10 @@ export const AppDataSource = new DataSource({
   username: USERNAME,
   password: PASSWORD,
   database: DATABASE,
-  synchronize: true,
+  synchronize: process.env.PGDBSYNC === 'true',
+  migrationsRun: true,
   logging: false,
-  entities: [Appointment, Customer, Service, User, Role],
-  migrations: ['. /migration/*.ts'],
+  entities: [Appointment, Customer, Treatment, User, Role],
+  migrations: ['./migration/*.ts'],
   subscribers: [],
 });
