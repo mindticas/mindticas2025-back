@@ -20,6 +20,7 @@ export const AppDataSource = new DataSource({
   synchronize: process.env.PGDBSYNC === 'true',
   migrationsRun: true,
   logging: false,
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
   entities: [Appointment, Customer, Treatment, User, Role],
   migrations: ['./migration/*.ts'],
   subscribers: [],
