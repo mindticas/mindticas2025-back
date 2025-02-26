@@ -14,11 +14,11 @@ export default class Appointment {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ default: 'pending' })
   status: string;
 
   @Column()
-  scheduled_at: Date;
+  scheduled_start: Date;
 
   @Column('decimal', { precision: 7, scale: 2 })
   total_price: number;
