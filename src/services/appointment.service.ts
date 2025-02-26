@@ -41,7 +41,10 @@ export default class AppointmentService {
       where: { id: In(createDto.service_id) },
     });
 
-    const serviceDuration = treatments[0].duration;
+    const serviceDuration = treatments.reduce(
+      (sum, treatment) => sum + Number(treatment.duration),
+      0,
+    );
     if (!serviceDuration) {
       throw new BadRequestException('Service duration not found');
     }
@@ -70,7 +73,10 @@ export default class AppointmentService {
       const customer = await this.customerService.createCustomer(customerDto);
     }
 
-    const totalPrice = treatments[0].price;
+    const totalPrice = treatments.reduce(
+      (sum, treatment) => sum + Number(treatment.price),
+      0,
+    );
 
     const appointment = this.appointmentRepository.create({
       status: AppointmentStatus.PENDING,
