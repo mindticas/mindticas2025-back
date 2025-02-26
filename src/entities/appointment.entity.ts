@@ -8,22 +8,28 @@ import {
   JoinTable,
 } from 'typeorm';
 import { Customer, User, Treatment } from './index';
+import { AppointmentStatus } from '../enums/appointments.status.enum';
 
 @Entity()
 export default class Appointment {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ default: 'pending' })
-  status: string;
+  @Column({
+    type: 'enum',
+    enum: AppointmentStatus,
+    default: AppointmentStatus.PENDING,
+    nullable: false,
+  })
+  status: AppointmentStatus;
 
-  @Column()
+  @Column({ nullable: false })
   scheduled_start: Date;
 
-  @Column('decimal', { precision: 7, scale: 2 })
+  @Column('decimal', { precision: 7, scale: 2, nullable: false })
   total_price: number;
 
-  @Column()
+  @Column({ nullable: false })
   duration: number;
 
   @ManyToOne(() => User, (user) => user.appointments)

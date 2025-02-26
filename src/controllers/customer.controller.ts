@@ -8,9 +8,7 @@ export default class CustomerController {
   constructor(private readonly customerService: CustomerService) {}
 
   @Post()
-  async createAppointment(
-    @Body() body: CustomerRegisterDto,
-  ): Promise<Customer> {
+  async createCustomer(@Body() body: CustomerRegisterDto): Promise<Customer> {
     const customer = await this.customerService.createCustomer(body);
     return customer;
   }

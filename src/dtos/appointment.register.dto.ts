@@ -1,12 +1,20 @@
-import { IsNumber, IsString, IsDateString, IsNotEmpty } from 'class-validator';
+import {
+  IsNumber,
+  IsString,
+  IsDateString,
+  IsNotEmpty,
+  MaxLength,
+} from 'class-validator';
 
 export default class AppointmentRegisterDto {
   @IsString()
   @IsNotEmpty()
+  @MaxLength(50)
   nameCustomer: string;
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(15)
   phoneCustomer: string;
 
   @IsDateString()

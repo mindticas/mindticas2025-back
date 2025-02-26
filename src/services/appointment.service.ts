@@ -5,6 +5,7 @@ import { Appointment, User, Customer, Treatment } from '../entities/';
 import { AppointmentRegisterDto, CustomerRegisterDto } from '../dtos';
 import { InjectRepository } from '@nestjs/typeorm';
 import CustomerService from './customer.service';
+import { AppointmentStatus } from '../enums/appointments.status.enum';
 
 @Injectable()
 export default class AppointmentService {
@@ -20,8 +21,8 @@ export default class AppointmentService {
     private readonly customerService: CustomerService,
   ) {}
 
-  async getAllAppointments(): Promise<Appointment[]> {
-    return await this.appointmentRepository.find({
+  getAllAppointments(): Promise<Appointment[]> {
+    return this.appointmentRepository.find({
       relations: { treatments: true },
     });
   }
@@ -32,7 +33,10 @@ export default class AppointmentService {
     const customerDto = new CustomerRegisterDto();
     customerDto.name = createDto.nameCustomer;
     customerDto.phone = createDto.phoneCustomer;
-    const userEntity = await this.userRepository.findOne({ where: { id: 1 } });
+    const userEntity = await this.userRepository.find({
+      take: 1,
+    });
+    const user = userEntity[0];
     const treatments = await this.treatmentRepository.find({
       where: { id: In(createDto.service_id) },
     });
@@ -68,14 +72,12 @@ export default class AppointmentService {
 
     const totalPrice = treatments[0].price;
 
-    console.log(serviceDuration);
-
     const appointment = this.appointmentRepository.create({
-      status: 'peding',
+      status: AppointmentStatus.PENDING,
       scheduled_start: scheduledStart,
       total_price: totalPrice,
       duration: serviceDuration,
-      user: userEntity,
+      user: user,
       customer: existingCustomer,
       treatments: treatments,
     });
