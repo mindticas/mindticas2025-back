@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -28,6 +29,12 @@ export default class TreatmentService {
     return treatment;
   }
   async createTreatment(dto: CreateTreatmentDTO): Promise<Treatment> {
+    const existingTreatment = await this.treatmentRepository.findOne({
+      where: { name: dto.name },
+    });
+    if (existingTreatment) {
+      throw new ConflictException('A treatment with this name already exists');
+    }
     const treatment = this.treatmentRepository.create(dto);
     try {
       return this.treatmentRepository.save(treatment);

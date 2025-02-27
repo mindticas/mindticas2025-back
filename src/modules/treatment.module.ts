@@ -10,4 +10,4 @@ import { Treatment } from '../entities';
   providers: [TreatmentService],
   exports: [TypeOrmModule],
 })
-export default class ServiceModule {}
+export default class TreatmentModule {}
