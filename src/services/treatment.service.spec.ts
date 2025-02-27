@@ -34,6 +34,7 @@ const createdto: CreateTreatmentDTO = {
   duration: 40,
   description: 'Corte al gusto del cliente sin ningun tratamiento',
 };
+
 const updatedto: UpdateTreatmentDTO = {
   name: 'Corte Punk',
   price: 160,
@@ -159,6 +160,7 @@ describe('TreatmentService', () => {
       expect(result.duration).toBe(60);
       expect(result.description).toBe(mockTreatment.description);
     });
+
     it('should throw NotFoundException if treatment not found', async () => {
       const dto: UpdateTreatmentDTO = { name: 'Updated Treatment' };
       mockTreatmentRepository.findOneBy.mockResolvedValue(null);
@@ -170,6 +172,7 @@ describe('TreatmentService', () => {
         expect(error.message).toBe('Treatment with ID: 1 not found');
       }
     });
+
     it('should throwInternalServerErrorException on save failure', async () => {
       mockTreatmentRepository.findOneBy.mockResolvedValue(mockTreatment);
       mockTreatmentRepository.save.mockRejectedValue(

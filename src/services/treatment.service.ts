@@ -24,36 +24,44 @@ export default class TreatmentService {
       throw new BadRequestException('Failed to fetch treatments');
     }
   }
+
   async getTreatment(id: number): Promise<Treatment> {
     const treatment = await this.searchFor(id);
     return treatment;
   }
+
   async createTreatment(dto: CreateTreatmentDTO): Promise<Treatment> {
     const existingTreatment = await this.treatmentRepository.findOne({
       where: { name: dto.name },
     });
+
     if (existingTreatment) {
       throw new ConflictException('A treatment with this name already exists');
     }
+
     const treatment = this.treatmentRepository.create(dto);
+
     try {
       return this.treatmentRepository.save(treatment);
     } catch (error) {
       throw new InternalServerErrorException(`Failed to create treatment`);
     }
   }
+
   async updateTreatment(
     id: number,
     dto: UpdateTreatmentDTO,
   ): Promise<Treatment> {
     const treatment = await this.searchFor(id);
     Object.assign(treatment, dto);
+
     try {
       return this.treatmentRepository.save(treatment);
     } catch (error) {
       throw new InternalServerErrorException(`Failed to update treatment`);
     }
   }
+
   async deleteTreatment(id: number): Promise<void> {
     const treatment = await this.searchFor(id);
     if (treatment) {
@@ -64,6 +72,7 @@ export default class TreatmentService {
       }
     }
   }
+
   async searchFor(id: number): Promise<Treatment> {
     const treatment = await this.treatmentRepository.findOneBy({ id });
     if (!treatment) {
