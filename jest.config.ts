@@ -1,6 +1,6 @@
 export default {
     roots: ['<rootDir>/src'],
-    testMatch: ['<rootDir>/tests/**/*.spec.ts'],
+    testMatch: ['**/*.spec.ts'],
     transform: {
       '^.+\\.tsx?$': 'ts-jest',
     },
