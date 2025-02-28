@@ -8,15 +8,13 @@ export default class AppointmentController {
   constructor(private readonly appointmentService: AppointmentService) {}
 
   @Get()
-  async getAllAppointments(): Promise<Appointment[]> {
-    return await this.appointmentService.getAllAppointments();
+  async get(): Promise<Appointment[]> {
+    return await this.appointmentService.get();
   }
 
   @Post()
-  async createAppointment(
-    @Body() dto: AppointmentRegisterDto,
-  ): Promise<Appointment> {
-    const appointment = await this.appointmentService.createAppointment(dto);
+  async create(@Body() dto: AppointmentRegisterDto): Promise<Appointment> {
+    const appointment = await this.appointmentService.create(dto);
     return appointment;
   }
 }

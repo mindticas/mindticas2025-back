@@ -10,17 +10,17 @@ export default class AppointmentRegisterDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(50)
-  nameCustomer: string;
+  name: string;
 
   @IsString()
   @IsNotEmpty()
   @MaxLength(15)
-  phoneCustomer: string;
+  phone: string;
 
   @IsDateString()
   @IsNotEmpty()
   scheduledStart: string;
 
   @IsNumber({}, { each: true })
-  service_id: number[];
+  treatment_id: number[];
 }

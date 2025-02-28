@@ -5,7 +5,7 @@ import { Appointment, User, Customer, Treatment } from '../entities/';
 import { AppointmentRegisterDto, CustomerRegisterDto } from '../dtos';
 import { InjectRepository } from '@nestjs/typeorm';
 import CustomerService from './customer.service';
-import { AppointmentStatus } from '../enums/appointments.status.enum';
+import { status } from '../enums/appointments.status.enum';
 
 @Injectable()
 export default class AppointmentService {
@@ -21,24 +21,22 @@ export default class AppointmentService {
     private readonly customerService: CustomerService,
   ) {}
 
-  getAllAppointments(): Promise<Appointment[]> {
+  get(): Promise<Appointment[]> {
     return this.appointmentRepository.find({
       relations: { treatments: true },
     });
   }
 
-  async createAppointment(
-    createDto: AppointmentRegisterDto,
-  ): Promise<Appointment> {
+  async create(createDto: AppointmentRegisterDto): Promise<Appointment> {
     const customerDto = new CustomerRegisterDto();
-    customerDto.name = createDto.nameCustomer;
-    customerDto.phone = createDto.phoneCustomer;
+    customerDto.name = createDto.name;
+    customerDto.phone = createDto.phone;
     const userEntity = await this.userRepository.find({
       take: 1,
     });
     const user = userEntity[0];
     const treatments = await this.treatmentRepository.find({
-      where: { id: In(createDto.service_id) },
+      where: { id: In(createDto.treatment_id) },
     });
 
     const serviceDuration = treatments.reduce(
@@ -66,11 +64,13 @@ export default class AppointmentService {
     }
 
     const existingCustomer = await this.customerRepository.findOne({
-      where: { phone: createDto.phoneCustomer },
+      where: { phone: createDto.phone },
     });
 
+    let newCustomer;
+
     if (!existingCustomer) {
-      const customer = await this.customerService.createCustomer(customerDto);
+      newCustomer = await this.customerService.createCustomer(customerDto);
     }
 
     const totalPrice = treatments.reduce(
@@ -79,14 +79,18 @@ export default class AppointmentService {
     );
 
     const appointment = this.appointmentRepository.create({
-      status: AppointmentStatus.PENDING,
+      status: status.PENDING,
       scheduled_start: scheduledStart,
       total_price: totalPrice,
       duration: serviceDuration,
       user: user,
-      customer: existingCustomer,
+      customer: newCustomer,
       treatments: treatments,
+      created_at: new Date(),
+      update_at: new Date(),
     });
+
+    console.log(appointment);
 
     try {
       return await this.appointmentRepository.save(appointment);
