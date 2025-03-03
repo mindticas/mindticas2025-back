@@ -53,7 +53,6 @@ describe('CustomerController', () => {
       phone: '3125463221',
     };
     const response = await controller.createCustomer(validatedDto);
-    console.log('Response from controller:', response); // :lupa: Debugging
     await expect(response).toEqual(expect.objectContaining(expectedResponse));
     expect(service.createCustomer).toHaveBeenCalledWith(dto);
   });
