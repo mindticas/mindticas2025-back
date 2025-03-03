@@ -5,7 +5,6 @@ import {
   IsNotEmpty,
   MaxLength,
 } from 'class-validator';
-import { CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 export default class AppointmentRegisterDto {
   @IsString()
@@ -22,12 +21,6 @@ export default class AppointmentRegisterDto {
   @IsNotEmpty()
   scheduledStart: string;
 
-  @CreateDateColumn()
-  created_at: Date;
-
-  @UpdateDateColumn()
-  updated_at: Date;
-
   @IsNumber({}, { each: true })
-  treatment_id: number[];
+  treatment_ids: number[];
 }

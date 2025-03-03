@@ -10,7 +10,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Customer, User, Treatment } from './index';
-import { status } from '../enums/appointments.status.enum';
+import { Status } from '../enums/appointments.status.enum';
 
 @Entity()
 export default class Appointment {
@@ -19,11 +19,11 @@ export default class Appointment {
 
   @Column({
     type: 'enum',
-    enum: status,
-    default: status.PENDING,
+    enum: Status,
+    default: Status.PENDING,
     nullable: false,
   })
-  status: status;
+  status: Status;
 
   @Column({ nullable: false })
   scheduled_start: Date;

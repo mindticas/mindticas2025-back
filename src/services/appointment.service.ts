@@ -5,7 +5,7 @@ import { Appointment, User, Customer, Treatment } from '../entities/';
 import { AppointmentRegisterDto, CustomerRegisterDto } from '../dtos';
 import { InjectRepository } from '@nestjs/typeorm';
 import CustomerService from './customer.service';
-import { status } from '../enums/appointments.status.enum';
+import { Status } from '../enums/appointments.status.enum';
 
 @Injectable()
 export default class AppointmentService {
@@ -36,7 +36,7 @@ export default class AppointmentService {
     });
     const user = userEntity[0];
     const treatments = await this.treatmentRepository.find({
-      where: { id: In(createDto.treatment_id) },
+      where: { id: In(createDto.treatment_ids) },
     });
 
     const serviceDuration = treatments.reduce(
@@ -79,7 +79,7 @@ export default class AppointmentService {
     );
 
     const appointment = this.appointmentRepository.create({
-      status: status.PENDING,
+      status: Status.PENDING,
       scheduled_start: scheduledStart,
       total_price: totalPrice,
       duration: serviceDuration,
