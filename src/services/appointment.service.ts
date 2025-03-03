@@ -47,7 +47,7 @@ export default class AppointmentService {
       throw new BadRequestException('Service duration not found');
     }
 
-    const scheduledStart = new Date(createDto.scheduledStart);
+    const scheduledStart = new Date(createDto.scheduled_start);
 
     const existingAppointment = await this.appointmentRepository.findOne({
       where: [
@@ -87,8 +87,6 @@ export default class AppointmentService {
       customer: customer,
       treatments: treatments,
     });
-
-    console.log(appointment);
 
     try {
       return await this.appointmentRepository.save(appointment);
