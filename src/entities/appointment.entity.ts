@@ -6,6 +6,8 @@ import {
   ManyToMany,
   ManyToOne,
   JoinTable,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Customer, User, Treatment } from './index';
 import { status } from '../enums/appointments.status.enum';
@@ -32,11 +34,11 @@ export default class Appointment {
   @Column({ nullable: false })
   duration: number;
 
-  @Column({ nullable: false })
+  @CreateDateColumn({ type: 'timestamp' })
   created_at: Date;
 
-  @Column()
-  update_at: Date;
+  @UpdateDateColumn({ type: 'timestamp' })
+  updated_at: Date;
 
   @ManyToOne(() => User, (user) => user.appointments)
   @JoinColumn()

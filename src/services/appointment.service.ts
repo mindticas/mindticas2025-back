@@ -63,14 +63,14 @@ export default class AppointmentService {
       );
     }
 
-    const existingCustomer = await this.customerRepository.findOne({
+    let customer = await this.customerRepository.findOne({
       where: { phone: createDto.phone },
     });
-
-    let newCustomer;
-
-    if (!existingCustomer) {
-      newCustomer = await this.customerService.createCustomer(customerDto);
+    if (!customer) {
+      const customerDto = new CustomerRegisterDto();
+      customerDto.name = createDto.name;
+      customerDto.phone = createDto.phone;
+      customer = await this.customerService.createCustomer(customerDto);
     }
 
     const totalPrice = treatments.reduce(
@@ -84,10 +84,8 @@ export default class AppointmentService {
       total_price: totalPrice,
       duration: serviceDuration,
       user: user,
-      customer: newCustomer,
+      customer: customer,
       treatments: treatments,
-      created_at: new Date(),
-      update_at: new Date(),
     });
 
     console.log(appointment);
