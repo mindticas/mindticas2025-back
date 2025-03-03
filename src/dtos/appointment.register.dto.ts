@@ -4,6 +4,8 @@ import {
   IsDateString,
   IsNotEmpty,
   MaxLength,
+  ArrayNotEmpty,
+  IsArray,
 } from 'class-validator';
 
 export default class AppointmentRegisterDto {
@@ -19,8 +21,11 @@ export default class AppointmentRegisterDto {
 
   @IsDateString()
   @IsNotEmpty()
-  scheduledStart: string;
+  scheduled_start: string;
 
   @IsNumber({}, { each: true })
+  @IsNotEmpty({ each: true })
+  @IsArray()
+  @ArrayNotEmpty()
   treatment_ids: number[];
 }
