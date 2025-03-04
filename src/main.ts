@@ -8,13 +8,12 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       'http://localhost:3000',
-      'https://mindticas2025-front-jxlcr32so-michelada-interns.vercel.app/',
+      'https://mindticas2025-front-git-development-michelada-interns.vercel.app/',
     ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     allowedHeaders: 'Content-Type,Authorization',
     credentials: true,
   });
-
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
