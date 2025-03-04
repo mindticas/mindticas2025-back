@@ -1,11 +1,18 @@
-import { Module } from '@nestjs/common';
+import { Module, OnModuleInit } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
-import { TreatmentModule, CustomerModule, AppointmentModule } from './modules';
+import {
+  TreatmentModule,
+  CustomerModule,
+  AppointmentModule,
+  UserModule,
+  RoleModule,
+} from './modules';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppDataSource } from './data-source';
-
+import { SeedService } from './services';
+import { RoleSeed, UserSeed } from './seeds';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -16,8 +23,16 @@ import { AppDataSource } from './data-source';
     TreatmentModule,
     CustomerModule,
     AppointmentModule,
+    UserModule,
+    RoleModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, SeedService, RoleSeed, UserSeed],
 })
-export class AppModule {}
+export class AppModule implements OnModuleInit {
+  constructor(private readonly seedService: SeedService) {}
+
+  async onModuleInit() {
+    await this.seedService.run();
+  }
+}
