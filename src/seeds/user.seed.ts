@@ -12,32 +12,36 @@ export default class UserSeed {
     private readonly roleRepository: Repository<Role>,
   ) {}
 
-  async run() {
-    const existingUsers = await this.userRepository.find();
-    if (existingUsers.length > 0) {
-      console.warn('\u{26A0} Users already seeded, skipping role seeding');
-      return;
-    }
-
-    const adminRole = await this.roleRepository.findOne({
-      where: { name: 'Admin' },
-    });
-    if (!adminRole) {
-      console.warn('\u{26A0} Admin role not found, skipping user seeding');
-      return;
-    }
-
-    const user = {
+  users = [
+    {
       name: 'Kevin',
       phone: '3124567676',
       email: 'kevin@gmail.com',
       password: 'nomejakies',
-      role: adminRole,
-    };
+      role_id: 1,
+    },
+  ];
 
-    const userEntity = this.userRepository.create(user);
-    await this.userRepository.save(userEntity);
-
-    console.log('\u{2705} User seeded successfully');
+  async run() {
+    for (const user of this.users) {
+      const existingUser = await this.userRepository.findOneBy({
+        name: user.name,
+      });
+      if (existingUser) {
+        console.log(`\u{26A0} ${user.name} user already seeded.`);
+        continue;
+      }
+      try {
+        const role = await this.roleRepository.findOneBy({ id: user.role_id });
+        const newUser = new User();
+        Object.assign(newUser, user);
+        newUser.role = role;
+        await this.userRepository.save(newUser);
+        console.log(`\u{2705} ${user.name} role seeded successfully`);
+      } catch (error) {
+        console.error('Error seeding user:', error.message);
+      }
+    }
+    console.log('\u{2705} User seed completed');
   }
 }

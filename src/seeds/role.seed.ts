@@ -10,21 +10,24 @@ export default class RoleSeed {
     private readonly roleRepository: Repository<Role>,
   ) {}
 
+  roles = [{ name: 'Admin' }];
+
   async run() {
-    const existingUsers = await this.roleRepository.find();
-    if (existingUsers.length > 0) {
-      console.log('\u{26A0} Role already seeded, skipping role seeding');
-      return;
+    for (const { name } of this.roles) {
+      const existingRole = await this.roleRepository.findOneBy({ name });
+      if (existingRole) {
+        console.log(`\u{26A0} ${name} role already seeded.`);
+        continue;
+      }
+
+      try {
+        const roleEntity = this.roleRepository.create({ name });
+        await this.roleRepository.save(roleEntity);
+        console.log(`\u{2705} ${name} role seeded successfully`);
+      } catch (error) {
+        console.error('Error seeding role:', error.message);
+      }
     }
-
-    const role = {
-      id: 1,
-      name: 'Admin',
-    };
-
-    const roleEntity = this.roleRepository.create(role);
-    await this.roleRepository.save(roleEntity);
-
-    console.log('\u{2705} Role seeded successfully');
+    console.log('\u{2705} Role seed completed');
   }
 }
