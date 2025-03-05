@@ -2,7 +2,14 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
-import { TreatmentModule, CustomerModule, AppointmentModule } from './modules';
+import {
+  TreatmentModule,
+  CustomerModule,
+  AppointmentModule,
+  UserModule,
+  RoleModule,
+  SeedModule,
+} from './modules';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppDataSource } from './data-source';
 
@@ -16,6 +23,9 @@ import { AppDataSource } from './data-source';
     TreatmentModule,
     CustomerModule,
     AppointmentModule,
+    UserModule,
+    RoleModule,
+    SeedModule,
   ],
   controllers: [AppController],
   providers: [AppService],
