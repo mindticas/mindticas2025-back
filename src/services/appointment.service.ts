@@ -6,6 +6,7 @@ import { AppointmentRegisterDto, CustomerRegisterDto } from '../dtos';
 import { InjectRepository } from '@nestjs/typeorm';
 import CustomerService from './customer.service';
 import { Status } from '../enums/appointments.status.enum';
+import { WhatsappService } from './whatsapp.service';
 
 @Injectable()
 export default class AppointmentService {
@@ -19,6 +20,7 @@ export default class AppointmentService {
     @InjectRepository(Treatment)
     private readonly treatmentRepository: Repository<Treatment>,
     private readonly customerService: CustomerService,
+    private readonly whatsappService: WhatsappService,
   ) {}
 
   get(): Promise<Appointment[]> {
@@ -87,8 +89,9 @@ export default class AppointmentService {
       customer: customer,
       treatments: treatments,
     });
-
     try {
+      await this.whatsappService.sendInteractiveMessage(customer.phone);
+
       return await this.appointmentRepository.save(appointment);
     } catch (error) {
       throw new BadRequestException(
