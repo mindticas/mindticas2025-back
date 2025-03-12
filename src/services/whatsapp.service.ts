@@ -1,16 +1,20 @@
+import { HttpService } from '@nestjs/axios';
 import {
-  Injectable,
+  BadRequestException,
   HttpException,
   HttpStatus,
-  BadRequestException,
+  Injectable,
+  Logger,
 } from '@nestjs/common';
-import axios from 'axios';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
-export class WhatsappService {
+export class WhatsAppService {
   private readonly apiUrl: string;
   private readonly token: string;
   private readonly channelId: string;
+  private readonly logger = new Logger(WhatsAppService.name);
+  private readonly httpService: HttpService;
 
   constructor() {
     this.apiUrl = process.env.WHAAPI_URL || '';
@@ -24,20 +28,23 @@ export class WhatsappService {
     try {
       const phoneF = `521${phone}@s.whatsapp.net`;
 
-      const response = await axios.post(
-        `${this.apiUrl}/messages/text`,
-        {
-          to: phoneF,
-          channel: this.channelId,
-          body: message,
-        },
-        {
-          headers: this.getHeaders(),
-        },
+      const response = await firstValueFrom(
+        this.httpService.post(
+          `${this.apiUrl}/messages/text`,
+          {
+            to: phoneF,
+            channel: this.channelId,
+            body: message,
+          },
+          {
+            headers: this.getHeaders(),
+          },
+        ),
       );
 
       return response.data;
     } catch (error) {
+      this.logger.error(`Error al enviar el mensaje: ${error.message}`);
       this.handleError(error);
     }
   }
@@ -55,22 +62,24 @@ export class WhatsappService {
         action: {
           buttons: [
             {
-              id: 'id',
+              id: 'confirm',
               type: 'quick_reply',
-              title: 'title',
+              title: '\u2705 Confirmar',
             },
           ],
         },
       };
 
-      const response = await axios.post(`${this.apiUrl}/messages/interactive`, data, {
+      const response = await firstValueFrom(
+        this.httpService.post(`${this.apiUrl}/messages/interactive`, data, {
           headers: {
             Authorization: `Bearer ${this.token}`,
             'Content-Type': 'application/json',
           },
-        },
+        }),
       );
       return response.data;
+      this.logger.log(`Enviando payload: ${JSON.stringify(data)}`);
     } catch (error) {
       console.error(
         'Error sending interactive message:',
@@ -96,7 +105,10 @@ export class WhatsappService {
       throw new HttpException(error.response.data, error.response.status);
     } else {
       console.error('Error inesperado:', error.message);
-      throw new HttpException('Error sending message', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        'Error sending message',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 

@@ -4,9 +4,8 @@ import { Repository, In } from 'typeorm';
 import { Appointment, User, Customer, Treatment } from '../entities/';
 import { AppointmentRegisterDto, CustomerRegisterDto } from '../dtos';
 import { InjectRepository } from '@nestjs/typeorm';
-import CustomerService from './customer.service';
+import { CustomerService, WhatsAppService } from './index';
 import { Status } from '../enums/appointments.status.enum';
-import { WhatsappService } from './whatsapp.service';
 
 @Injectable()
 export default class AppointmentService {
@@ -20,7 +19,7 @@ export default class AppointmentService {
     @InjectRepository(Treatment)
     private readonly treatmentRepository: Repository<Treatment>,
     private readonly customerService: CustomerService,
-    private readonly whatsappService: WhatsappService,
+    private readonly whatsappService: WhatsAppService,
   ) {}
 
   get(): Promise<Appointment[]> {

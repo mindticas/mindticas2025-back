@@ -9,6 +9,7 @@ import {
   UserModule,
   RoleModule,
   SeedModule,
+  WhatsAppModule,
 } from './modules';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppDataSource } from './data-source';
@@ -26,6 +27,7 @@ import { AppDataSource } from './data-source';
     UserModule,
     RoleModule,
     SeedModule,
+    WhatsAppModule,
   ],
   controllers: [AppController],
   providers: [AppService],

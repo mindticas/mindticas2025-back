@@ -1,7 +1,13 @@
 import { Module } from '@nestjs/common';
-import { WhatsappService } from '../services/whatsapp.service';
+import { HttpModule } from '@nestjs/axios';
+import { ConfigModule } from '@nestjs/config';
+import { WhatsAppController } from '../controllers';
+import { WhatsAppService } from '../services';
+
 @Module({
-  providers: [WhatsappService],
-  exports: [WhatsappService],
+  imports: [HttpModule, ConfigModule.forRoot()],
+  controllers: [WhatsAppController],
+  providers: [WhatsAppService],
+  exports: [WhatsAppService],
 })
-export class WhatsAppModule {}
+export default class WhatsAppModule {}
