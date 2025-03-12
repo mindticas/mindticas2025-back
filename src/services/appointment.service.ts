@@ -90,7 +90,10 @@ export default class AppointmentService {
       treatments: treatments,
     });
     try {
-      await this.whatsappService.sendInteractiveMessage(customer.phone);
+      await this.whatsappService.sendMessage(
+        customer.phone,
+        'Tu cita ha sido creada.',
+      );
 
       return await this.appointmentRepository.save(appointment);
     } catch (error) {

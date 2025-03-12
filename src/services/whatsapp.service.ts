@@ -1,11 +1,24 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Injectable,
+  HttpException,
+  HttpStatus,
+  BadRequestException,
+} from '@nestjs/common';
 import axios from 'axios';
 
 @Injectable()
 export class WhatsappService {
-  private readonly apiUrl = process.env.WHAAPI_URL;
-  private readonly token = process.env.WHAAPI_TOKEN;
-  private readonly channelId = process.env.WHAAPI_CHANNEL_ID;
+  private readonly apiUrl: string;
+  private readonly token: string;
+  private readonly channelId: string;
+
+  constructor() {
+    this.apiUrl = process.env.WHAAPI_URL || '';
+    this.token = process.env.WHAAPI_TOKEN || '';
+    this.channelId = process.env.WHAAPI_CHANNEL_ID || '';
+
+    this.validateEnvVariables();
+  }
 
   async sendMessage(phone: string, message: string): Promise<any> {
     try {
@@ -83,7 +96,17 @@ export class WhatsappService {
       throw new HttpException(error.response.data, error.response.status);
     } else {
       console.error('Error inesperado:', error.message);
-      throw new HttpException('Error enviando mensaje', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException('Error sending message', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  private validateEnvVariables(): void {
+    if (!this.apiUrl) {
+      throw new BadRequestException('Invalid Api url');
+    } else if (!this.token) {
+      throw new BadRequestException('Invalid Token');
+    } else if (!this.channelId) {
+      throw new BadRequestException('Invalid Channel Id');
     }
   }
 }
