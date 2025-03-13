@@ -3,8 +3,8 @@ import { AppointmentService } from '../services';
 import { AppointmentController } from '../controllers/';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Appointment, User, Customer, Treatment } from '../entities';
-import { CustomerModule } from './index';
-import { WhatsAppModule } from './whatsapp.module';
+import WhatsAppModule from './whatsapp.module';
+import CustomerModule from './customer.module';
 
 @Module({
   imports: [
