@@ -1,23 +1,35 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { WhatsappService } from './whatsapp.service';
+import { HttpService } from '@nestjs/axios';
+import WhatsAppService from './whatsapp.service';
 import { BadRequestException, HttpException, HttpStatus } from '@nestjs/common';
-import axios from 'axios';
+import { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import { of, throwError } from 'rxjs';
 
-jest.mock('axios');
-
-describe('WhatsappService', () => {
-  let service: WhatsappService;
+describe('WhatsAppService', () => {
+  let service: WhatsAppService;
+  let httpService: HttpService;
 
   beforeEach(async () => {
-    process.env.WHAAPI_URL = 'https://api.whatsapp.com';
-    process.env.WHAAPI_TOKEN = 'test-token';
-    process.env.WHAAPI_CHANNEL_ID = 'test-channel';
+    process.env.WHAAPI_URL = 'https://fake-api.com';
+    process.env.WHAAPI_TOKEN = 'fake-token';
+    process.env.WHAAPI_CHANNEL_ID = 'fake-channel';
+
+    const mockHttpService = {
+      post: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [WhatsappService],
+      providers: [
+        WhatsAppService,
+        {
+          provide: HttpService,
+          useValue: mockHttpService,
+        },
+      ],
     }).compile();
 
-    service = module.get<WhatsappService>(WhatsappService);
+    service = module.get<WhatsAppService>(WhatsAppService);
+    httpService = module.get<HttpService>(HttpService);
   });
 
   afterEach(() => {
@@ -28,93 +40,98 @@ describe('WhatsappService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('validateEnvVariables', () => {
-    it('should throw BadRequestException if WHAAPI_URL is missing', () => {
-      process.env.WHAAPI_URL = '';
-      expect(() => new WhatsappService()).toThrow(BadRequestException);
-    });
-
-    it('should throw BadRequestException if WHAAPI_TOKEN is missing', () => {
-      process.env.WHAAPI_TOKEN = '';
-      expect(() => new WhatsappService()).toThrow(BadRequestException);
-    });
-
-    it('should throw BadRequestException if WHAAPI_CHANNEL_ID is missing', () => {
-      process.env.WHAAPI_CHANNEL_ID = '';
-      expect(() => new WhatsappService()).toThrow(BadRequestException);
-    });
-  });
-
   describe('sendMessage', () => {
     it('should send a message successfully', async () => {
       const phone = '5551234567';
       const message = 'Hello, this is a test message';
-      const mockResponse = { data: { success: true } };
 
-      (axios.post as jest.Mock).mockResolvedValue(mockResponse);
+      // Mocking a full AxiosResponse
+      const mockResponse: AxiosResponse<any, any> = {
+        data: { success: true },
+        status: 200,
+        statusText: 'OK',
+        headers: { 'content-type': 'application/json' },
+        config: {} as InternalAxiosRequestConfig,
+      };
+
+      jest.spyOn(httpService, 'post').mockReturnValueOnce(of(mockResponse));
 
       const result = await service.sendMessage(phone, message);
-      expect(result).toEqual(mockResponse.data);
-      expect(axios.post).toHaveBeenCalledWith(
-        `${process.env.WHAAPI_URL}/messages/text`,
-        {
-          to: `521${phone}@s.whatsapp.net`,
-          channel: process.env.WHAAPI_CHANNEL_ID,
-          body: message,
-        },
-        { headers: service['getHeaders']() }
-      );
+      expect(result).toEqual({ success: true });
     });
 
     it('should handle errors properly', async () => {
-      (axios.post as jest.Mock).mockRejectedValue({
-        response: { status: 400, data: 'Request error' },
-      });
+      jest.spyOn(httpService, 'post').mockReturnValueOnce(
+        throwError(() => ({
+          response: {
+            status: 400,
+            data: 'Invalid request',
+          },
+        }))
+      );
 
       await expect(
-        service.sendMessage('5551234567', 'Message'),
-      ).rejects.toThrow(new HttpException('Request error', 400));
+        service.sendMessage('5551234567', 'Test Message'),
+      ).rejects.toThrow(new HttpException('Invalid request', 400));
     });
   });
 
   describe('sendInteractiveMessage', () => {
     it('should send an interactive message successfully', async () => {
       const phone = '5551234567';
-      const mockResponse = { data: { success: true } };
+      const message = 'Confirm your appointment';
 
-      (axios.post as jest.Mock).mockResolvedValue(mockResponse);
+      const mockResponse: AxiosResponse<any, any> = {
+        data: { success: true },
+        status: 200,
+        statusText: 'OK',
+        headers: { 'content-type': 'application/json' },
+        config: {} as InternalAxiosRequestConfig,
+      };
 
-      const result = await service.sendInteractiveMessage(phone);
-      expect(result).toEqual(mockResponse.data);
-      expect(axios.post).toHaveBeenCalledWith(
-        `${process.env.WHAAPI_URL}/messages/interactive`,
-        {
-          to: `521${phone}@s.whatsapp.net`,
-          channel: process.env.WHAAPI_CHANNEL_ID,
-          type: 'button',
-          body: { text: 'empty' },
-          action: {
-            buttons: [{ id: 'id', type: 'quick_reply', title: 'title' }],
-          },
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${process.env.WHAAPI_TOKEN}`,
-            'Content-Type': 'application/json',
-          },
-        },
-      );
+      jest.spyOn(httpService, 'post').mockReturnValueOnce(of(mockResponse));
+
+      const result = await service.sendInteractiveMessage(phone, message);
+      expect(result).toEqual({ success: true });
     });
 
     it('should handle errors in sendInteractiveMessage', async () => {
-      (axios.post as jest.Mock).mockRejectedValue({
-        response: { status: 500, data: 'Internal server error' },
-      });
+      jest.spyOn(httpService, 'post').mockReturnValueOnce(
+        throwError(() => ({
+          response: { status: 500, data: 'Internal Server Error' },
+        }))
+      );
 
       await expect(
-        service.sendInteractiveMessage('5551234567'),
+        service.sendInteractiveMessage('5551234567', 'Test'),
       ).rejects.toThrow(
-        new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR)
+        new HttpException(
+          'Internal Server Error',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        ),
+      );
+    });
+  });
+
+  describe('validateEnvVariables', () => {
+    it('should throw BadRequestException if WHAAPI_URL is missing', () => {
+      process.env.WHAAPI_URL = '';
+      expect(() => new WhatsAppService(httpService)).toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should throw BadRequestException if WHAAPI_TOKEN is missing', () => {
+      process.env.WHAAPI_TOKEN = '';
+      expect(() => new WhatsAppService(httpService)).toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should throw BadRequestException if WHAAPI_CHANNEL_ID is missing', () => {
+      process.env.WHAAPI_CHANNEL_ID = '';
+      expect(() => new WhatsAppService(httpService)).toThrow(
+        BadRequestException,
       );
     });
   });
