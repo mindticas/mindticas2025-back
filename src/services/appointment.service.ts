@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Injectable } from '@nestjs/common';
 import { Repository, In } from 'typeorm';
 import { Appointment, User, Customer, Treatment } from '../entities/';
@@ -92,7 +92,7 @@ export default class AppointmentService {
     });
     try {
       const saved = await this.appointmentRepository.save(appointment);
-      const messageText = messages['appointment_confirmation'];
+      const messageText = messages['appointment_reminder'];
       await this.whatsAppService.sendInteractiveMessage(
         customer.phone,
         messageText,
@@ -103,5 +103,19 @@ export default class AppointmentService {
         `Error creating appointment: ${error.message}`,
       );
     }
+  }
+
+  async updateStatus(appointmentId: number, status: Status) {
+    const appointment = await this.appointmentRepository.findOneBy({
+      id: appointmentId,
+    });
+    if (!appointment) {
+      throw new NotFoundException(
+        `Appointment with ID: ${appointmentId} not found`,
+      );
+    }
+    appointment.status = status;
+    await this.appointmentRepository.save(appointment);
+    return appointment;
   }
 }

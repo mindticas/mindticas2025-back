@@ -61,7 +61,7 @@ export default class WhatsAppService {
         action: {
           buttons: [
             {
-              id: 'confirm',
+              id: '1',
               type: 'quick_reply',
               title: '\u2705 Confirmar',
             },
@@ -71,10 +71,7 @@ export default class WhatsAppService {
 
       const response = await firstValueFrom(
         this.httpService.post(`${this.apiUrl}/messages/interactive`, data, {
-          headers: {
-            Authorization: `Bearer ${this.token}`,
-            'Content-Type': 'application/json',
-          },
+          headers: this.getHeaders(),
         }),
       );
       this.logger.log(`Enviando payload: ${JSON.stringify(data)}`);
