@@ -4,8 +4,10 @@ import { Repository, In } from 'typeorm';
 import { Appointment, User, Customer, Treatment } from '../entities/';
 import { AppointmentRegisterDto, CustomerRegisterDto } from '../dtos';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CustomerService, WhatsAppService } from './index';
 import { Status } from '../enums/appointments.status.enum';
+import CustomerService from './customer.service';
+import WhatsAppService from './whatsapp.service';
+import * as messages from '../templates/whatsapp.messages.json';
 
 @Injectable()
 export default class AppointmentService {
@@ -19,7 +21,7 @@ export default class AppointmentService {
     @InjectRepository(Treatment)
     private readonly treatmentRepository: Repository<Treatment>,
     private readonly customerService: CustomerService,
-    private readonly whatsappService: WhatsAppService,
+    private readonly whatsAppService: WhatsAppService,
   ) {}
 
   get(): Promise<Appointment[]> {
@@ -89,12 +91,13 @@ export default class AppointmentService {
       treatments: treatments,
     });
     try {
-      await this.whatsappService.sendMessage(
+      const saved = await this.appointmentRepository.save(appointment);
+      const messageText = messages['appointment_confirmation'];
+      await this.whatsAppService.sendInteractiveMessage(
         customer.phone,
-        'Tu cita ha sido creada.',
+        messageText,
       );
-
-      return await this.appointmentRepository.save(appointment);
+      return saved;
     } catch (error) {
       throw new BadRequestException(
         `Error creating appointment: ${error.message}`,

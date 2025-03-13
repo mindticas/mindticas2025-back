@@ -9,14 +9,13 @@ import {
 import { firstValueFrom } from 'rxjs';
 
 @Injectable()
-export class WhatsAppService {
+export default class WhatsAppService {
   private readonly apiUrl: string;
   private readonly token: string;
   private readonly channelId: string;
   private readonly logger = new Logger(WhatsAppService.name);
-  private readonly httpService: HttpService;
 
-  constructor() {
+  constructor(private readonly httpService: HttpService) {
     this.apiUrl = process.env.WHAAPI_URL || '';
     this.token = process.env.WHAAPI_TOKEN || '';
     this.channelId = process.env.WHAAPI_CHANNEL_ID || '';
@@ -49,7 +48,7 @@ export class WhatsAppService {
     }
   }
 
-  async sendInteractiveMessage(phone: string): Promise<any> {
+  async sendInteractiveMessage(phone: string, message: string): Promise<any> {
     try {
       const formattedPhone = `521${phone}@s.whatsapp.net`;
       const data = {
@@ -57,7 +56,7 @@ export class WhatsAppService {
         channel: this.channelId,
         type: 'button',
         body: {
-          text: 'empty',
+          text: message,
         },
         action: {
           buttons: [
@@ -78,8 +77,8 @@ export class WhatsAppService {
           },
         }),
       );
-      return response.data;
       this.logger.log(`Enviando payload: ${JSON.stringify(data)}`);
+      return response.data;
     } catch (error) {
       console.error(
         'Error sending interactive message:',
