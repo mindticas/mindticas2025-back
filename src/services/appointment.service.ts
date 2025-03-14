@@ -52,6 +52,8 @@ export default class AppointmentService {
 
     const scheduledStart = new Date(createDto.scheduled_start);
 
+    this.appointmentValidation(scheduledStart);
+
     const existingAppointment = await this.appointmentRepository.findOne({
       where: [
         {
@@ -117,5 +119,17 @@ export default class AppointmentService {
     appointment.status = status;
     await this.appointmentRepository.save(appointment);
     return appointment;
+  }
+
+  private appointmentValidation(start: Date): void {
+    const today = new Date();
+    const maxDate = new Date(today);
+    maxDate.setDate(today.getDate() + 7);
+
+    if (start > maxDate || start < today) {
+      throw new BadRequestException(
+        'Appointments must be scheduled within the next 7 days and cannot be in the past.',
+      );
+    }
   }
 }
