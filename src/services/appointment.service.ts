@@ -1,11 +1,13 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Injectable } from '@nestjs/common';
 import { Repository, In } from 'typeorm';
 import { Appointment, User, Customer, Treatment } from '../entities/';
 import { AppointmentRegisterDto, CustomerRegisterDto } from '../dtos';
 import { InjectRepository } from '@nestjs/typeorm';
-import CustomerService from './customer.service';
 import { Status } from '../enums/appointments.status.enum';
+import CustomerService from './customer.service';
+import WhatsAppService from './whatsapp.service';
+import * as messages from '../templates/whatsapp.messages.json';
 
 @Injectable()
 export default class AppointmentService {
@@ -19,6 +21,7 @@ export default class AppointmentService {
     @InjectRepository(Treatment)
     private readonly treatmentRepository: Repository<Treatment>,
     private readonly customerService: CustomerService,
+    private readonly whatsAppService: WhatsAppService,
   ) {}
 
   get(): Promise<Appointment[]> {
@@ -87,13 +90,32 @@ export default class AppointmentService {
       customer: customer,
       treatments: treatments,
     });
-
     try {
-      return await this.appointmentRepository.save(appointment);
+      const saved = await this.appointmentRepository.save(appointment);
+      const messageText = messages['appointment_reminder'];
+      await this.whatsAppService.sendInteractiveMessage(
+        customer.phone,
+        messageText,
+      );
+      return saved;
     } catch (error) {
       throw new BadRequestException(
         `Error creating appointment: ${error.message}`,
       );
     }
+  }
+
+  async updateStatus(appointmentId: number, status: Status) {
+    const appointment = await this.appointmentRepository.findOneBy({
+      id: appointmentId,
+    });
+    if (!appointment) {
+      throw new NotFoundException(
+        `Appointment with ID: ${appointmentId} not found`,
+      );
+    }
+    appointment.status = status;
+    await this.appointmentRepository.save(appointment);
+    return appointment;
   }
 }
