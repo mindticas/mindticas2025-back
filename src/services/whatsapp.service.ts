@@ -88,6 +88,19 @@ export default class WhatsAppService {
     }
   }
 
+  async sentACK(messageId: string) {
+    const response = await firstValueFrom(
+      this.httpService.put(
+        `${this.apiUrl}/messages/${messageId}`,
+        {},
+        {
+          headers: this.getHeaders(),
+        },
+      ),
+    );
+    return response;
+  }
+
   private getHeaders(): Record<string, string> {
     return {
       Authorization: `Bearer ${this.token}`,

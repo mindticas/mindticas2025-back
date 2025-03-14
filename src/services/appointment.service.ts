@@ -133,7 +133,8 @@ export default class AppointmentService {
     const today = new Date();
     const maxDate = new Date(today);
     maxDate.setDate(today.getDate() + 7);
-
+    console.log(start);
+    console.log(today);
     if (start > maxDate || start < today) {
       throw new BadRequestException(
         'Appointments must be scheduled within the next 7 days and cannot be in the past.',
