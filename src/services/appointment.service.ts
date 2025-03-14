@@ -34,9 +34,11 @@ export default class AppointmentService {
     const customerDto = new CustomerRegisterDto();
     customerDto.name = createDto.name;
     customerDto.phone = createDto.phone;
+
     const userEntity = await this.userRepository.find({
       take: 1,
     });
+
     const user = userEntity[0];
     const treatments = await this.treatmentRepository.find({
       where: { id: In(createDto.treatment_ids) },
@@ -46,25 +48,16 @@ export default class AppointmentService {
       (sum, treatment) => sum + Number(treatment.duration),
       0,
     );
+
     if (!serviceDuration) {
       throw new BadRequestException('Service duration not found');
     }
 
     const scheduledStart = new Date(createDto.scheduled_start);
 
-    const existingAppointment = await this.appointmentRepository.findOne({
-      where: [
-        {
-          scheduled_start: scheduledStart,
-        },
-      ],
-    });
+    this.existingAppointment(scheduledStart);
 
-    if (existingAppointment) {
-      throw new BadRequestException(
-        'An appointment is already scheduled at this time.',
-      );
-    }
+    this.appointmentValidation(scheduledStart);
 
     let customer = await this.customerRepository.findOne({
       where: { phone: createDto.phone },
@@ -90,6 +83,7 @@ export default class AppointmentService {
       customer: customer,
       treatments: treatments,
     });
+
     try {
       const saved = await this.appointmentRepository.save(appointment);
       const messageText = messages['appointment_reminder'];
@@ -117,5 +111,33 @@ export default class AppointmentService {
     appointment.status = status;
     await this.appointmentRepository.save(appointment);
     return appointment;
+  }
+
+  private async existingAppointment(scheduledStart) {
+    const existingAppointment = await this.appointmentRepository.findOne({
+      where: [
+        {
+          scheduled_start: scheduledStart,
+        },
+      ],
+    });
+
+    if (existingAppointment) {
+      throw new BadRequestException(
+        'An appointment is already scheduled at this time.',
+      );
+    }
+  }
+
+  private appointmentValidation(start: Date): void {
+    const today = new Date();
+    const maxDate = new Date(today);
+    maxDate.setDate(today.getDate() + 7);
+
+    if (start > maxDate || start < today) {
+      throw new BadRequestException(
+        'Appointments must be scheduled within the next 7 days and cannot be in the past.',
+      );
+    }
   }
 }
