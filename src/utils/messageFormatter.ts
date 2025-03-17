@@ -14,12 +14,13 @@ export function generateParams(
   const correctedDate = new Date(scheduledStart);
   correctedDate.setHours(correctedDate.getHours() + 6); //6 hours difference
 
-  const formattedDay = correctedDate.toLocaleDateString('es-ES', dateOptions) || 'Día no definido';
-  const formattedTime = correctedDate.toLocaleTimeString('es-ES', timeOptions) || 'Hora no definida';
+  const formattedDay = correctedDate.toLocaleDateString('es-ES', dateOptions) || 'Undefined day';
+  const month = correctedDate.toLocaleString('es-ES', { month: 'long' }) || 'Undefined month';
+  const formattedTime = correctedDate.toLocaleTimeString('es-ES', timeOptions) || 'Undefined hour';
 
   const params: Record<string, string> = {
-    day: formattedDay.split(' ')[0] || 'Día',
-    month: formattedDay.split(' ')[1] || 'Mes',
+    day: formattedDay.split(' ')[0] || 'Day',
+    month: month.charAt(0).toUpperCase() + month.slice(1),
     hour: formattedTime,
     service: treatments.length > 0 ? treatments.map(t => t.name).join(', ') : 'Servicio no definido',
   };
