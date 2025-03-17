@@ -22,12 +22,12 @@ export function generateParams(
     day: formattedDay.split(' ')[0] || 'Day',
     month: month.charAt(0).toUpperCase() + month.slice(1),
     hour: formattedTime,
-    service: treatments.length > 0 ? treatments.map(t => t.name).join(', ') : 'Servicio no definido',
+    service: treatments.length > 0 ? treatments.map(t => t.name).join(', ') : 'Undefined service',
   };
 
   if (type === "appointment_reminder" || type === "appointment_canceled") {
-    params["name"] = customer?.name || 'Cliente';
-    params["phone"] = customer?.phone || 'Teléfono no disponible';
+    params["name"] = customer?.name || 'Customer';
+    params["phone"] = customer?.phone || 'Unavailable phone';
   }
 
   if (type === "appointment_canceled") {
