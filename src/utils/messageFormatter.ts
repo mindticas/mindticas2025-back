@@ -31,7 +31,7 @@ export function generateParams(
   }
 
   if (type === "appointment_canceled") {
-    params["url"] = "https://mindticas2025-front-git-development-michelada-interns.vercel.app/"; //URL development
+    params["url"] = process.env.URL_WEB; //URL development
   }
 
   return params;
