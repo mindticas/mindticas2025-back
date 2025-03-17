@@ -8,6 +8,7 @@ import { Status } from '../enums/appointments.status.enum';
 import CustomerService from './customer.service';
 import WhatsAppService from './whatsapp.service';
 import * as messages from '../templates/whatsapp.messages.json';
+import { formatMessage, generateParams } from '../utils/messageFormatter';
 
 @Injectable()
 export default class AppointmentService {
@@ -86,11 +87,12 @@ export default class AppointmentService {
 
     try {
       const saved = await this.appointmentRepository.save(appointment);
-      const messageText = messages['appointment_reminder'];
-      await this.whatsAppService.sendInteractiveMessage(
-        customer.phone,
-        messageText,
-      );
+
+      const params = generateParams(scheduledStart, treatments, "appointment_confirmation");
+      const messageTemplate = messages["appointment_confirmation"];
+      const formattedMessage = formatMessage(messageTemplate, params);
+
+      await this.whatsAppService.sendInteractiveMessage(customer.phone, formattedMessage);
       return saved;
     } catch (error) {
       throw new BadRequestException(
@@ -98,6 +100,29 @@ export default class AppointmentService {
       );
     }
   }
+
+  async getLastAppointmentByPhone(phone: string): Promise<Appointment | null> {
+    try {
+      const customer = await this.customerRepository.findOne({
+        where: { phone },
+      });
+  
+      if (!customer) {
+        return null;
+      }
+  
+      const lastAppointment = await this.appointmentRepository.findOne({
+        where: { customer },
+        order: { scheduled_start: 'DESC' },
+        relations: ['treatments'],
+      });
+  
+      return lastAppointment;
+    } catch (error) {
+      throw new BadRequestException(`Error al obtener la última cita: ${error.message}`);
+    }
+  }
+  
 
   async updateStatus(appointmentId: number, status: Status) {
     const appointment = await this.appointmentRepository.findOneBy({
