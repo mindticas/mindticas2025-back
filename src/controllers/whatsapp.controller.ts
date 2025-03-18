@@ -4,6 +4,7 @@ import { WhatsAppService } from '../services';
 @Controller('/webhooks/whapi')
 export default class TreatmentController {
   constructor(private whatsAppservice: WhatsAppService) {}
+
   @Post()
   @HttpCode(200)
   async handleWebhook(@Body() body: any) {

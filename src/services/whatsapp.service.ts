@@ -1,6 +1,5 @@
 import { HttpService } from '@nestjs/axios';
 import {
-  BadRequestException,
   forwardRef,
   HttpException,
   HttpStatus,
@@ -20,6 +19,17 @@ export default class WhatsAppService {
   private readonly token: string;
   private readonly channelId: string;
   private readonly logger = new Logger(WhatsAppService.name);
+  public static readonly CONFIRM = {
+    id: '1',
+    type: 'quick_reply',
+    title: '\u2705 Confirmar cita',
+  };
+  public static readonly CANCEL = {
+    id: '2',
+    type: 'quick_reply',
+    title: '\u274C Cancelar cita',
+  };
+
   constructor(
     private readonly httpService: HttpService,
     @Inject(forwardRef(() => AppointmentService))
@@ -54,7 +64,11 @@ export default class WhatsAppService {
     }
   }
 
-  async sendInteractiveMessage(phone: string, message: string): Promise<any> {
+  async sendInteractiveMessage(
+    phone: string,
+    message: string,
+    buttons: { id: string; type: string; title: string }[],
+  ): Promise<any> {
     try {
       const formattedPhone = `521${phone}@s.whatsapp.net`;
       const data = {
@@ -65,13 +79,7 @@ export default class WhatsAppService {
           text: message,
         },
         action: {
-          buttons: [
-            {
-              id: '1',
-              type: 'quick_reply',
-              title: '\u2705 Confirmar',
-            },
-          ],
+          buttons: buttons,
         },
       };
       const response = await firstValueFrom(
@@ -176,11 +184,13 @@ export default class WhatsAppService {
 
   private validateEnvVariables(): void {
     if (!this.apiUrl) {
-      throw new BadRequestException('Invalid Api url');
-    } else if (!this.token) {
-      throw new BadRequestException('Invalid Token');
-    } else if (!this.channelId) {
-      throw new BadRequestException('Invalid Channel Id');
+      this.logger.error('Invalid Api url');
+    }
+    if (!this.token) {
+      this.logger.error('Invalid Token');
+    }
+    if (!this.channelId) {
+      this.logger.error('Invalid Channel Id');
     }
   }
 }
