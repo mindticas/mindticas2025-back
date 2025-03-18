@@ -10,7 +10,7 @@ import CustomerModule from './customer.module';
   imports: [
     TypeOrmModule.forFeature([Appointment, User, Customer, Treatment]),
     forwardRef(() => CustomerModule),
-    WhatsAppModule,
+    forwardRef(() => WhatsAppModule),
   ],
   controllers: [AppointmentController],
   providers: [AppointmentService],

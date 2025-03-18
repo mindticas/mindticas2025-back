@@ -63,7 +63,7 @@ export default class AppointmentService {
     }
   }
 
-  async getLastAppointmentByPhone(phone: string): Promise<Appointment | null> {
+  async getLastAppointmentByPhone(phone: string): Promise<Appointment> {
     try {
       const customer = await this.customerRepository.findOne({
         where: { phone },

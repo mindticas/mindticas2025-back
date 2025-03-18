@@ -1,12 +1,18 @@
 import { HttpService } from '@nestjs/axios';
 import {
   BadRequestException,
+  forwardRef,
   HttpException,
   HttpStatus,
+  Inject,
   Injectable,
   Logger,
 } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
+import AppointmentService from './appointment.service';
+import { formatMessage, generateParams } from '../utils/messageFormatter';
+import * as messagesTemplate from '../templates/whatsapp.messages.json';
+import { Status } from '../enums/appointments.status.enum';
 
 @Injectable()
 export default class WhatsAppService {
@@ -14,19 +20,20 @@ export default class WhatsAppService {
   private readonly token: string;
   private readonly channelId: string;
   private readonly logger = new Logger(WhatsAppService.name);
-
-  constructor(private readonly httpService: HttpService) {
+  constructor(
+    private readonly httpService: HttpService,
+    @Inject(forwardRef(() => AppointmentService))
+    private readonly appointmentService: AppointmentService,
+  ) {
     this.apiUrl = process.env.WHAAPI_URL || '';
     this.token = process.env.WHAAPI_TOKEN || '';
     this.channelId = process.env.WHAAPI_CHANNEL_ID || '';
-
     this.validateEnvVariables();
   }
 
   async sendMessage(phone: string, message: string): Promise<any> {
     try {
       const phoneF = `521${phone}@s.whatsapp.net`;
-
       const response = await firstValueFrom(
         this.httpService.post(
           `${this.apiUrl}/messages/text`,
@@ -40,7 +47,6 @@ export default class WhatsAppService {
           },
         ),
       );
-
       return response.data;
     } catch (error) {
       this.logger.error(`Error al enviar el mensaje: ${error.message}`);
@@ -68,7 +74,6 @@ export default class WhatsAppService {
           ],
         },
       };
-
       const response = await firstValueFrom(
         this.httpService.post(`${this.apiUrl}/messages/interactive`, data, {
           headers: this.getHeaders(),
@@ -99,6 +104,41 @@ export default class WhatsAppService {
       ),
     );
     return response;
+  }
+
+  async handleWebhook(body: any): Promise<any> {
+    const { messages } = body;
+    if (!messages) return;
+    const { id, type, from, reply } = messages[0];
+    this.sentACK(id);
+    if (type !== 'reply' || !reply?.buttons_reply?.id) return;
+    const numberRaw = from.slice(-10);
+    const buttonId = reply.buttons_reply.id;
+    if (buttonId === 'ButtonsV3:1') {
+      const lastAppointment =
+        await this.appointmentService.getLastAppointmentByPhone(numberRaw);
+      if (!lastAppointment) {
+        console.error('Appointment not found');
+        return;
+      }
+      await this.appointmentService.updateStatus(
+        lastAppointment.id,
+        Status.CONFIRMED,
+      );
+      const params = generateParams(
+        lastAppointment.scheduled_start,
+        lastAppointment.treatments,
+        'appointment_confirmed',
+      );
+      const formattedMessage = formatMessage(
+        messagesTemplate['appointment_confirmed'],
+        params,
+      );
+      return this.sendMessage(numberRaw, formattedMessage);
+    }
+    if (buttonId === 'ButtonsV3:2') {
+      return this.sendMessage(numberRaw, messages['appointment_canceled']);
+    }
   }
 
   private getHeaders(): Record<string, string> {
