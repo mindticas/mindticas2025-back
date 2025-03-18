@@ -14,6 +14,16 @@ export default class WhatsAppService {
   private readonly token: string;
   private readonly channelId: string;
   private readonly logger = new Logger(WhatsAppService.name);
+  public static readonly CONFIRM = {
+    id: '1',
+    type: 'quick_reply',
+    title: '\u2705 Confirmar cita',
+  };
+  public static readonly CANCEL = {
+    id: '2',
+    type: 'quick_reply',
+    title: '\u274C Cancelar cita',
+  };
 
   constructor(private readonly httpService: HttpService) {
     this.apiUrl = process.env.WHAAPI_URL || '';
@@ -48,7 +58,11 @@ export default class WhatsAppService {
     }
   }
 
-  async sendInteractiveMessage(phone: string, message: string): Promise<any> {
+  async sendInteractiveMessage(
+    phone: string,
+    message: string,
+    buttons: { id: string; type: string; title: string }[],
+  ): Promise<any> {
     try {
       const formattedPhone = `521${phone}@s.whatsapp.net`;
       const data = {
@@ -59,13 +73,7 @@ export default class WhatsAppService {
           text: message,
         },
         action: {
-          buttons: [
-            {
-              id: '1',
-              type: 'quick_reply',
-              title: '\u2705 Confirmar',
-            },
-          ],
+          buttons: buttons,
         },
       };
 
@@ -86,6 +94,19 @@ export default class WhatsAppService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  async sentACK(messageId: string) {
+    const response = await firstValueFrom(
+      this.httpService.put(
+        `${this.apiUrl}/messages/${messageId}`,
+        {},
+        {
+          headers: this.getHeaders(),
+        },
+      ),
+    );
+    return response;
   }
 
   private getHeaders(): Record<string, string> {
@@ -110,11 +131,11 @@ export default class WhatsAppService {
 
   private validateEnvVariables(): void {
     if (!this.apiUrl) {
-      throw new BadRequestException('Invalid Api url');
+      this.logger.error('Invalid Api url');
     } else if (!this.token) {
-      throw new BadRequestException('Invalid Token');
+      this.logger.error('Invalid Token');
     } else if (!this.channelId) {
-      throw new BadRequestException('Invalid Channel Id');
+      this.logger.error('Invalid Channel Id');
     }
   }
 }

@@ -1,6 +1,11 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Logger,
+  NotFoundException,
+  OnModuleInit,
+} from '@nestjs/common';
 import { Injectable } from '@nestjs/common';
-import { Repository, In } from 'typeorm';
+import { Repository, In, MoreThan, Not } from 'typeorm';
 import { Appointment, User, Customer, Treatment } from '../entities/';
 import { AppointmentRegisterDto, CustomerRegisterDto } from '../dtos';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -8,9 +13,12 @@ import { Status } from '../enums/appointments.status.enum';
 import CustomerService from './customer.service';
 import WhatsAppService from './whatsapp.service';
 import * as messages from '../templates/whatsapp.messages.json';
+import { SchedulerRegistry } from '@nestjs/schedule';
+import { CronJob } from 'cron';
 
 @Injectable()
-export default class AppointmentService {
+export default class AppointmentService implements OnModuleInit {
+  private readonly logger = new Logger(AppointmentService.name);
   constructor(
     @InjectRepository(Appointment)
     private readonly appointmentRepository: Repository<Appointment>,
@@ -22,6 +30,7 @@ export default class AppointmentService {
     private readonly treatmentRepository: Repository<Treatment>,
     private readonly customerService: CustomerService,
     private readonly whatsAppService: WhatsAppService,
+    private readonly schedulerRegistry: SchedulerRegistry,
   ) {}
 
   get(): Promise<Appointment[]> {
@@ -86,16 +95,96 @@ export default class AppointmentService {
 
     try {
       const saved = await this.appointmentRepository.save(appointment);
-      const messageText = messages['appointment_reminder'];
-      await this.whatsAppService.sendInteractiveMessage(
-        customer.phone,
-        messageText,
-      );
+
+      try {
+        const messageText = messages['appointment_confirmation'];
+        await this.whatsAppService.sendInteractiveMessage(
+          customer.phone,
+          messageText,
+          [WhatsAppService.CONFIRM],
+        );
+
+        this.scheduleReminderMessage(saved);
+      } catch (error) {
+        this.logger.error(`Error al conectar con whapi: ${error.message}`);
+      }
+
       return saved;
     } catch (error) {
       throw new BadRequestException(
         `Error creating appointment: ${error.message}`,
       );
+    }
+  }
+
+  scheduleReminderMessage(appointment: Appointment) {
+    try {
+      const reminderTime = new Date(appointment.scheduled_start);
+      reminderTime.setHours(reminderTime.getHours() - 12);
+
+      const now = new Date();
+      if (reminderTime <= now) {
+        this.logger.log(
+          `Tiempo excedido para el recordatorio de la cita: ${appointment.id}.`,
+        );
+        return;
+      }
+
+      const job = new CronJob(reminderTime, async () => {
+        try {
+          const currentAppointment = await this.appointmentRepository.findOne({
+            where: { id: appointment.id },
+            relations: ['customer'],
+          });
+
+          if (
+            currentAppointment &&
+            currentAppointment.status !== Status.CANCELED
+          ) {
+            const reminderText = messages['appointment_reminder'];
+            await this.whatsAppService.sendInteractiveMessage(
+              currentAppointment.customer.phone,
+              reminderText,
+              [WhatsAppService.CANCEL],
+            );
+            this.logger.log(`Recordatorio enviado a cita: ${appointment.id}`);
+          }
+        } catch (error) {
+          this.logger.error(`Error al enviar recordatorio: ${error.message}`);
+        }
+      });
+
+      const jobName = `reminder_${appointment.id}`;
+      this.schedulerRegistry.addCronJob(jobName, job);
+      job.start();
+
+      this.logger.log(
+        `Recordatorio programado, cita: ${appointment.id}/${reminderTime}`,
+      );
+    } catch (error) {
+      this.logger.error(`Error al programar recordatorio: ${error.message}`);
+    }
+  }
+
+  async onModuleInit() {
+    try {
+      const pendingAppointments = await this.appointmentRepository.find({
+        where: {
+          scheduled_start: MoreThan(new Date()),
+          status: Not(Status.CANCELED),
+        },
+        relations: ['customer'],
+      });
+
+      this.logger.log(
+        `Programando ${pendingAppointments.length} recordatorios al iniciar`,
+      );
+
+      for (const appointment of pendingAppointments) {
+        this.scheduleReminderMessage(appointment);
+      }
+    } catch (error) {
+      this.logger.error(`Error al inicializar recordatorios: ${error.message}`);
     }
   }
 
@@ -136,7 +225,7 @@ export default class AppointmentService {
 
     if (start > maxDate || start < today) {
       throw new BadRequestException(
-        'Appointments must be scheduled within the next 7 days and cannot be in the past.',
+        'Appointments must be scheduled within a range of the next 7 days.',
       );
     }
   }
