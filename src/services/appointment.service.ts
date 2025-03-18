@@ -75,7 +75,7 @@ export default class AppointmentService {
 
       return this.appointmentRepository.findOne({
         where: { customer },
-        order: { scheduled_start: 'DESC' },
+        order: { id: 'DESC' },
         relations: ['treatments'],
       });
     } catch (error) {
