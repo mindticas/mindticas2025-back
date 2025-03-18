@@ -114,13 +114,13 @@ export default class WhatsAppService {
     if (type !== 'reply' || !reply?.buttons_reply?.id) return;
     const numberRaw = from.slice(-10);
     const buttonId = reply.buttons_reply.id;
+    const lastAppointment =
+      await this.appointmentService.getLastAppointmentByPhone(numberRaw);
+    if (!lastAppointment) {
+      console.error('Appointment not found');
+      return;
+    }
     if (buttonId === 'ButtonsV3:1') {
-      const lastAppointment =
-        await this.appointmentService.getLastAppointmentByPhone(numberRaw);
-      if (!lastAppointment) {
-        console.error('Appointment not found');
-        return;
-      }
       await this.appointmentService.updateStatus(
         lastAppointment.id,
         Status.CONFIRMED,
@@ -137,7 +137,20 @@ export default class WhatsAppService {
       return this.sendMessage(numberRaw, formattedMessage);
     }
     if (buttonId === 'ButtonsV3:2') {
-      return this.sendMessage(numberRaw, messages['appointment_canceled']);
+      await this.appointmentService.updateStatus(
+        lastAppointment.id,
+        Status.CONFIRMED,
+      );
+      const params = generateParams(
+        lastAppointment.scheduled_start,
+        lastAppointment.treatments,
+        'appointment_canceled',
+      );
+      const formattedMessage = formatMessage(
+        messagesTemplate['appointment_canceled'],
+        params,
+      );
+      return this.sendMessage(numberRaw, formattedMessage);
     }
   }
 
