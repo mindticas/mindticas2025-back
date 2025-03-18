@@ -15,6 +15,7 @@ import WhatsAppService from './whatsapp.service';
 import * as messages from '../templates/whatsapp.messages.json';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
+import { formatMessage, generateParams } from '../utils/messageFormatter';
 
 @Injectable()
 export default class AppointmentService implements OnModuleInit {
@@ -40,79 +41,70 @@ export default class AppointmentService implements OnModuleInit {
   }
 
   async create(createDto: AppointmentRegisterDto): Promise<Appointment> {
-    const customerDto = new CustomerRegisterDto();
-    customerDto.name = createDto.name;
-    customerDto.phone = createDto.phone;
-
-    const userEntity = await this.userRepository.find({
-      take: 1,
-    });
-
-    const user = userEntity[0];
-    const treatments = await this.treatmentRepository.find({
-      where: { id: In(createDto.treatment_ids) },
-    });
-
-    const serviceDuration = treatments.reduce(
-      (sum, treatment) => sum + Number(treatment.duration),
-      0,
-    );
-
-    if (!serviceDuration) {
-      throw new BadRequestException('Service duration not found');
-    }
-
+    const user = await this.getUser();
+    const treatments = await this.getTreatments(createDto.treatment_ids);
+    const serviceDuration = this.calculateServiceDuration(treatments);
     const scheduledStart = new Date(createDto.scheduled_start);
 
-    this.existingAppointment(scheduledStart);
+    this.validateAppointment(scheduledStart);
+    await this.ensureNoExistingAppointment(scheduledStart);
 
-    this.appointmentValidation(scheduledStart);
+    const customer = await this.getOrCreateCustomer(createDto);
 
-    let customer = await this.customerRepository.findOne({
-      where: { phone: createDto.phone },
-    });
-    if (!customer) {
-      const customerDto = new CustomerRegisterDto();
-      customerDto.name = createDto.name;
-      customerDto.phone = createDto.phone;
-      customer = await this.customerService.createCustomer(customerDto);
-    }
-
-    const totalPrice = treatments.reduce(
-      (sum, treatment) => sum + Number(treatment.price),
-      0,
-    );
+    const totalPrice = this.calculateTotalPrice(treatments);
 
     const appointment = this.appointmentRepository.create({
       status: Status.PENDING,
       scheduled_start: scheduledStart,
       total_price: totalPrice,
       duration: serviceDuration,
-      user: user,
-      customer: customer,
-      treatments: treatments,
+      user,
+      customer,
+      treatments,
     });
 
     try {
-      const saved = await this.appointmentRepository.save(appointment);
+      const savedAppointment = await this.appointmentRepository.save(
+        appointment,
+      );
 
       try {
-        const messageText = messages['appointment_confirmation'];
-        await this.whatsAppService.sendInteractiveMessage(
+        await this.sendAppointmentConfirmationMessage(
           customer.phone,
-          messageText,
-          [WhatsAppService.CONFIRM],
+          scheduledStart,
+          treatments,
         );
-
-        this.scheduleReminderMessage(saved);
+        this.scheduleReminderMessage(savedAppointment);
       } catch (error) {
         this.logger.error(`Error al conectar con whapi: ${error.message}`);
       }
 
-      return saved;
+      return savedAppointment;
     } catch (error) {
       throw new BadRequestException(
         `Error creating appointment: ${error.message}`,
+      );
+    }
+  }
+
+  async getLastAppointmentByPhone(phone: string): Promise<Appointment> {
+    try {
+      const customer = await this.customerRepository.findOne({
+        where: { phone },
+      });
+
+      if (!customer) {
+        return null;
+      }
+
+      return this.appointmentRepository.findOne({
+        where: { customer },
+        order: { id: 'DESC' },
+        relations: ['treatments'],
+      });
+    } catch (error) {
+      throw new BadRequestException(
+        `Error al obtener la última cita: ${error.message}`,
       );
     }
   }
@@ -202,23 +194,27 @@ export default class AppointmentService implements OnModuleInit {
     return appointment;
   }
 
-  private async existingAppointment(scheduledStart) {
-    const existingAppointment = await this.appointmentRepository.findOne({
-      where: [
-        {
-          scheduled_start: scheduledStart,
-        },
-      ],
-    });
-
-    if (existingAppointment) {
-      throw new BadRequestException(
-        'An appointment is already scheduled at this time.',
-      );
-    }
+  private async getUser(): Promise<User> {
+    const userEntity = await this.userRepository.find({ take: 1 });
+    return userEntity[0];
   }
 
-  private appointmentValidation(start: Date): void {
+  private async getTreatments(treatmentIds: number[]): Promise<Treatment[]> {
+    return this.treatmentRepository.find({
+      where: { id: In(treatmentIds) },
+    });
+  }
+
+  private calculateServiceDuration(treatments: Treatment[]): number {
+    const duration = treatments.reduce(
+      (sum, treatment) => sum + Number(treatment.duration),
+      0,
+    );
+    if (!duration) throw new BadRequestException('Service duration not found');
+    return duration;
+  }
+
+  private validateAppointment(start: Date): void {
     const today = new Date();
     const maxDate = new Date(today);
     maxDate.setDate(today.getDate() + 7);
@@ -228,5 +224,60 @@ export default class AppointmentService implements OnModuleInit {
         'Appointments must be scheduled within a range of the next 7 days.',
       );
     }
+  }
+
+  private async ensureNoExistingAppointment(
+    scheduledStart: Date,
+  ): Promise<void> {
+    const existingAppointment = await this.appointmentRepository.findOne({
+      where: { scheduled_start: scheduledStart },
+    });
+
+    if (existingAppointment) {
+      throw new BadRequestException(
+        'An appointment is already scheduled at this time.',
+      );
+    }
+  }
+
+  private async getOrCreateCustomer(
+    createDto: AppointmentRegisterDto,
+  ): Promise<Customer> {
+    let customer = await this.customerRepository.findOne({
+      where: { phone: createDto.phone },
+    });
+
+    if (!customer) {
+      const customerDto = new CustomerRegisterDto();
+      customerDto.name = createDto.name;
+      customerDto.phone = createDto.phone;
+      customer = await this.customerService.createCustomer(customerDto);
+    }
+    return customer;
+  }
+
+  private calculateTotalPrice(treatments: Treatment[]): number {
+    return treatments.reduce(
+      (sum, treatment) => sum + Number(treatment.price),
+      0,
+    );
+  }
+
+  private async sendAppointmentConfirmationMessage(
+    phone: string,
+    scheduledStart: Date,
+    treatments: Treatment[],
+  ) {
+    const params = generateParams(
+      scheduledStart,
+      treatments,
+      'appointment_confirmation',
+    );
+    const messageTemplate = messages['appointment_confirmation'];
+    const formattedMessage = formatMessage(messageTemplate, params);
+
+    await this.whatsAppService.sendInteractiveMessage(phone, formattedMessage, [
+      WhatsAppService.CONFIRM,
+    ]);
   }
 }
