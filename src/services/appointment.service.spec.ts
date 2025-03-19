@@ -3,10 +3,15 @@ import { AppointmentService } from '../services';
 import { Appointment, User, Customer, Treatment } from '../entities';
 import { Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { BadRequestException } from '@nestjs/common';
+import {
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { AppointmentRegisterDto } from '../dtos';
 import CustomerService from '../services/customer.service';
 import { Status } from '../enums/appointments.status.enum';
+import WhatsAppService from '../services/whatsapp.service';
+import { SchedulerRegistry } from '@nestjs/schedule';
 
 const mockAppointmentRepository = {
   find: jest.fn(),
@@ -31,6 +36,11 @@ const mockTreatmentRepository = {
 
 const mockCustomerService = {
   createCustomer: jest.fn(),
+};
+
+const mockWhatsAppService = {
+  sendMessage: jest.fn(),
+  sendInteractiveMessage: jest.fn(),
 };
 
 const mockUser = {
@@ -70,7 +80,7 @@ const mockAppointment = {
 const createDto: AppointmentRegisterDto = {
   name: 'Leonel Ceballos',
   phone: '3125463221',
-  scheduled_start: '2025-03-15T10:00:00Z',
+  scheduled_start: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ahead
   treatment_ids: [1],
 };
 
@@ -81,6 +91,8 @@ describe('AppointmentService', () => {
   let customerRepository: Repository<Customer>;
   let treatmentRepository: Repository<Treatment>;
   let customerService: CustomerService;
+  let whatsAppService: WhatsAppService;
+  let schedulerRegistry: SchedulerRegistry;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -106,6 +118,14 @@ describe('AppointmentService', () => {
           provide: CustomerService,
           useValue: mockCustomerService,
         },
+        {
+          provide: WhatsAppService,
+          useValue: mockWhatsAppService,
+        },
+        {
+          provide: SchedulerRegistry,
+          useValue: {},
+        },
       ],
     }).compile();
 
@@ -121,6 +141,8 @@ describe('AppointmentService', () => {
       getRepositoryToken(Treatment),
     );
     customerService = module.get<CustomerService>(CustomerService);
+    whatsAppService = module.get<WhatsAppService>(WhatsAppService);
+    schedulerRegistry = module.get<SchedulerRegistry>(SchedulerRegistry);
   });
 
   afterEach(() => {
@@ -147,6 +169,7 @@ describe('AppointmentService', () => {
 
       const result = await service.create(createDto);
       expect(result).toEqual(mockAppointment);
+      expect(mockWhatsAppService.sendInteractiveMessage).toHaveBeenCalled();
     });
 
     it('should throw BadRequestException if no treatments found', async () => {
@@ -188,18 +211,18 @@ describe('AppointmentService', () => {
       expect(mockCustomerService.createCustomer).toHaveBeenCalled();
     });
 
-    it('should throw BadRequestException on save failure', async () => {
+    it('should throw InternalServerErrorException on save failure', async () => {
       mockUserRepository.find.mockResolvedValue([mockUser]);
       mockTreatmentRepository.find.mockResolvedValue(mockTreatments);
       mockAppointmentRepository.findOne.mockResolvedValue(null);
       mockCustomerRepository.findOne.mockResolvedValue(mockCustomer);
       mockAppointmentRepository.create.mockReturnValue(mockAppointment);
       mockAppointmentRepository.save.mockRejectedValue(
-        new BadRequestException('Error creating appointment'),
+        new Error('Error creating appointment'),
       );
 
       await expect(service.create(createDto)).rejects.toThrow(
-        BadRequestException,
+        InternalServerErrorException,
       );
       await expect(service.create(createDto)).rejects.toThrow(
         'Error creating appointment',

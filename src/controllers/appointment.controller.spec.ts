@@ -49,36 +49,43 @@ describe('AppointmentController', () => {
       },
     ]),
 
-    create: jest.fn((dto: AppointmentRegisterDto) => ({
-      id: Math.floor(Math.random() * 1000),
-      status: Status.PENDING,
-      scheduled_start: new Date(dto.scheduled_start),
-      total_price: 120.75,
-      duration: 90,
-      user: {
-        id: 1,
-        name: 'Kevin barber',
-        role: 'admin',
-        phone: '3121290001',
-        email: 'kevin@gmail.com',
-        password: 'password123',
-        appointments: [],
-      },
-      customer: {
-        id: 2,
-        name: dto.name,
-        phone: dto.phone,
-        appointments: [],
-      },
-      treatments: dto.treatment_ids.map((id) => ({
-        id,
-        name: `Treatment ${id}`,
-        price: 50,
-        duration: 30,
-        description: 'Standard treatment',
-        appointments: [],
-      })),
-    })),
+    create: jest
+      .fn()
+      .mockImplementation(async (dto: AppointmentRegisterDto) => {
+        if (!dto.scheduled_start || !dto.treatment_ids || !dto.name) {
+          throw new Error('Error creating appointment');
+        }
+        return {
+          id: Math.floor(Math.random() * 1000),
+          status: Status.PENDING,
+          scheduled_start: new Date(dto.scheduled_start),
+          total_price: 120.75,
+          duration: 90,
+          user: {
+            id: 1,
+            name: 'Kevin barber',
+            role: 'admin',
+            phone: '3121290001',
+            email: 'kevin@gmail.com',
+            password: 'password123',
+            appointments: [],
+          },
+          customer: {
+            id: 2,
+            name: dto.name,
+            phone: dto.phone,
+            appointments: [],
+          },
+          treatments: dto.treatment_ids.map((id) => ({
+            id,
+            name: `Treatment ${id}`,
+            price: 50,
+            duration: 30,
+            description: 'Standard treatment',
+            appointments: [],
+          })),
+        };
+      }),
   };
 
   beforeEach(async () => {
@@ -218,5 +225,22 @@ describe('AppointmentController', () => {
         type: 'body',
       }),
     ).rejects.toThrow(BadRequestException);
+  });
+
+  it('should throw BadRequestException on save failure', async () => {
+    const dto: AppointmentRegisterDto = {
+      name: 'Leonel Ceballos',
+      phone: '3125463221',
+      scheduled_start: '2025-03-20T15:00:00Z',
+      treatment_ids: [1],
+    };
+
+    mockAppointmentService.create.mockRejectedValue(
+      new Error('Error creating appointment'),
+    );
+
+    await expect(controller.create(dto)).rejects.toThrow(
+      'Error creating appointment',
+    );
   });
 });
