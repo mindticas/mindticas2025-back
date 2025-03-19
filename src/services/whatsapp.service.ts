@@ -1,12 +1,17 @@
 import { HttpService } from '@nestjs/axios';
 import {
-  BadRequestException,
+  forwardRef,
   HttpException,
   HttpStatus,
+  Inject,
   Injectable,
   Logger,
 } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
+import AppointmentService from './appointment.service';
+import { formatMessage, generateParams } from '../utils/messageFormatter';
+import * as messagesTemplate from '../templates/whatsapp.messages.json';
+import { Status } from '../enums/appointments.status.enum';
 
 @Injectable()
 export default class WhatsAppService {
@@ -14,19 +19,31 @@ export default class WhatsAppService {
   private readonly token: string;
   private readonly channelId: string;
   private readonly logger = new Logger(WhatsAppService.name);
+  public static readonly CONFIRM = {
+    id: '1',
+    type: 'quick_reply',
+    title: '\u2705 Confirmar cita',
+  };
+  public static readonly CANCEL = {
+    id: '2',
+    type: 'quick_reply',
+    title: '\u274C Cancelar cita',
+  };
 
-  constructor(private readonly httpService: HttpService) {
+  constructor(
+    private readonly httpService: HttpService,
+    @Inject(forwardRef(() => AppointmentService))
+    private readonly appointmentService: AppointmentService,
+  ) {
     this.apiUrl = process.env.WHAAPI_URL || '';
     this.token = process.env.WHAAPI_TOKEN || '';
     this.channelId = process.env.WHAAPI_CHANNEL_ID || '';
-
     this.validateEnvVariables();
   }
 
   async sendMessage(phone: string, message: string): Promise<any> {
     try {
       const phoneF = `521${phone}@s.whatsapp.net`;
-
       const response = await firstValueFrom(
         this.httpService.post(
           `${this.apiUrl}/messages/text`,
@@ -40,7 +57,6 @@ export default class WhatsAppService {
           },
         ),
       );
-
       return response.data;
     } catch (error) {
       this.logger.error(`Error al enviar el mensaje: ${error.message}`);
@@ -48,7 +64,11 @@ export default class WhatsAppService {
     }
   }
 
-  async sendInteractiveMessage(phone: string, message: string): Promise<any> {
+  async sendInteractiveMessage(
+    phone: string,
+    message: string,
+    buttons: { id: string; type: string; title: string }[],
+  ): Promise<any> {
     try {
       const formattedPhone = `521${phone}@s.whatsapp.net`;
       const data = {
@@ -59,16 +79,9 @@ export default class WhatsAppService {
           text: message,
         },
         action: {
-          buttons: [
-            {
-              id: '1',
-              type: 'quick_reply',
-              title: '\u2705 Confirmar',
-            },
-          ],
+          buttons: buttons,
         },
       };
-
       const response = await firstValueFrom(
         this.httpService.post(`${this.apiUrl}/messages/interactive`, data, {
           headers: this.getHeaders(),
@@ -85,6 +98,67 @@ export default class WhatsAppService {
         error.response?.data || 'Error sending interactive message:',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
+    }
+  }
+
+  async sentACK(messageId: string) {
+    const response = await firstValueFrom(
+      this.httpService.put(
+        `${this.apiUrl}/messages/${messageId}`,
+        {},
+        {
+          headers: this.getHeaders(),
+        },
+      ),
+    );
+    return response;
+  }
+
+  async handleWebhook(body: any): Promise<any> {
+    const { messages } = body;
+    if (!messages) return;
+    const { id, type, from, reply } = messages[0];
+    this.sentACK(id);
+    if (type !== 'reply' || !reply?.buttons_reply?.id) return;
+    const numberRaw = from.slice(-10);
+    const buttonId = reply.buttons_reply.id;
+    const lastAppointment =
+      await this.appointmentService.getLastAppointmentByPhone(numberRaw);
+    if (!lastAppointment) {
+      console.error('Appointment not found');
+      return;
+    }
+    if (buttonId === 'ButtonsV3:1') {
+      await this.appointmentService.updateStatus(
+        lastAppointment.id,
+        Status.CONFIRMED,
+      );
+      const params = generateParams(
+        lastAppointment.scheduled_start,
+        lastAppointment.treatments,
+        'appointment_confirmed',
+      );
+      const formattedMessage = formatMessage(
+        messagesTemplate['appointment_confirmed'],
+        params,
+      );
+      return this.sendMessage(numberRaw, formattedMessage);
+    }
+    if (buttonId === 'ButtonsV3:2') {
+      await this.appointmentService.updateStatus(
+        lastAppointment.id,
+        Status.CANCELED,
+      );
+      const params = generateParams(
+        lastAppointment.scheduled_start,
+        lastAppointment.treatments,
+        'appointment_canceled',
+      );
+      const formattedMessage = formatMessage(
+        messagesTemplate['appointment_canceled'],
+        params,
+      );
+      return this.sendMessage(numberRaw, formattedMessage);
     }
   }
 
@@ -110,11 +184,13 @@ export default class WhatsAppService {
 
   private validateEnvVariables(): void {
     if (!this.apiUrl) {
-      throw new BadRequestException('Invalid Api url');
-    } else if (!this.token) {
-      throw new BadRequestException('Invalid Token');
-    } else if (!this.channelId) {
-      throw new BadRequestException('Invalid Channel Id');
+      this.logger.error('Invalid Api url');
+    }
+    if (!this.token) {
+      this.logger.error('Invalid Token');
+    }
+    if (!this.channelId) {
+      this.logger.error('Invalid Channel Id');
     }
   }
 }
