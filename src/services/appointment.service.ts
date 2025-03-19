@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  InternalServerErrorException,
   Logger,
   NotFoundException,
   OnModuleInit,
@@ -76,12 +77,12 @@ export default class AppointmentService implements OnModuleInit {
         );
         this.scheduleReminderMessage(savedAppointment);
       } catch (error) {
-        this.logger.error(`Error al conectar con whapi: ${error.message}`);
+        this.logger.error(`Error connecting to whapi: ${error.message}`);
       }
 
       return savedAppointment;
     } catch (error) {
-      throw new BadRequestException(
+      throw new InternalServerErrorException(
         `Error creating appointment: ${error.message}`,
       );
     }
@@ -104,7 +105,7 @@ export default class AppointmentService implements OnModuleInit {
       });
     } catch (error) {
       throw new BadRequestException(
-        `Error al obtener la última cita: ${error.message}`,
+        `Error getting the last appointment: ${error.message}`,
       );
     }
   }
@@ -117,9 +118,9 @@ export default class AppointmentService implements OnModuleInit {
       const now = new Date();
       if (reminderTime <= now) {
         this.logger.log(
-          `Tiempo excedido para el recordatorio de la cita: ${appointment.id}.`,
+          `Appointment reminder time exceeded: ${appointment.id}.`,
         );
-        return;
+        return null;
       }
 
       const job = new CronJob(reminderTime, async () => {
@@ -139,10 +140,10 @@ export default class AppointmentService implements OnModuleInit {
               reminderText,
               [WhatsAppService.CANCEL],
             );
-            this.logger.log(`Recordatorio enviado a cita: ${appointment.id}`);
+            this.logger.log(`Reminder sent to appointment: ${appointment.id}`);
           }
         } catch (error) {
-          this.logger.error(`Error al enviar recordatorio: ${error.message}`);
+          this.logger.error(`Error sending reminder: ${error.message}`);
         }
       });
 
@@ -151,10 +152,10 @@ export default class AppointmentService implements OnModuleInit {
       job.start();
 
       this.logger.log(
-        `Recordatorio programado, cita: ${appointment.id}/${reminderTime}`,
+        `Scheduled reminder, appointment: ${appointment.id}/${reminderTime}`,
       );
     } catch (error) {
-      this.logger.error(`Error al programar recordatorio: ${error.message}`);
+      this.logger.error(`Error scheduling reminder: ${error.message}`);
     }
   }
 
@@ -169,14 +170,14 @@ export default class AppointmentService implements OnModuleInit {
       });
 
       this.logger.log(
-        `Programando ${pendingAppointments.length} recordatorios al iniciar`,
+        `Programming ${pendingAppointments.length} reminders at startup`,
       );
 
       for (const appointment of pendingAppointments) {
         this.scheduleReminderMessage(appointment);
       }
     } catch (error) {
-      this.logger.error(`Error al inicializar recordatorios: ${error.message}`);
+      this.logger.error(`Error initializing reminders: ${error.message}`);
     }
   }
 
@@ -233,11 +234,12 @@ export default class AppointmentService implements OnModuleInit {
       where: { scheduled_start: scheduledStart },
     });
 
-    if (existingAppointment) {
-      throw new BadRequestException(
-        'An appointment is already scheduled at this time.',
-      );
+    if (!existingAppointment) {
+      return null;
     }
+    throw new BadRequestException(
+      'An appointment is already scheduled at this time.',
+    );
   }
 
   private async getOrCreateCustomer(

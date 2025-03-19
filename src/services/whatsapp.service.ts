@@ -147,7 +147,7 @@ export default class WhatsAppService {
     if (buttonId === 'ButtonsV3:2') {
       await this.appointmentService.updateStatus(
         lastAppointment.id,
-        Status.CONFIRMED,
+        Status.CANCELED,
       );
       const params = generateParams(
         lastAppointment.scheduled_start,
