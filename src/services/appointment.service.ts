@@ -8,7 +8,11 @@ import {
 import { Injectable } from '@nestjs/common';
 import { Repository, In, MoreThan, Not } from 'typeorm';
 import { Appointment, User, Customer, Treatment } from '../entities/';
-import { AppointmentRegisterDto, CustomerRegisterDto } from '../dtos';
+import {
+  AppointmentRegisterDto,
+  CustomerRegisterDto,
+  AppointmentUpdateDto,
+} from '../dtos';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Status } from '../enums/appointments.status.enum';
 import CustomerService from './customer.service';
@@ -37,8 +41,13 @@ export default class AppointmentService implements OnModuleInit {
 
   get(): Promise<Appointment[]> {
     return this.appointmentRepository.find({
-      relations: { treatments: true },
+      relations: { user: true, customer: true, treatments: true },
     });
+  }
+
+  async getById(id: number): Promise<Appointment> {
+    const appointment = await this.searchForId(id);
+    return appointment;
   }
 
   async create(createDto: AppointmentRegisterDto): Promise<Appointment> {
@@ -47,8 +56,13 @@ export default class AppointmentService implements OnModuleInit {
     const serviceDuration = this.calculateServiceDuration(treatments);
     const scheduledStart = new Date(createDto.scheduled_start);
 
+    if (await this.ExistingAppointment(scheduledStart)) {
+      throw new BadRequestException(
+        'An appointment is already scheduled at this time.',
+      );
+    }
+
     this.validateAppointment(scheduledStart);
-    await this.ensureNoExistingAppointment(scheduledStart);
 
     const customer = await this.getOrCreateCustomer(createDto);
 
@@ -85,6 +99,31 @@ export default class AppointmentService implements OnModuleInit {
       throw new InternalServerErrorException(
         `Error creating appointment: ${error.message}`,
       );
+    }
+  }
+
+  async update(
+    id: number,
+    updateDto: AppointmentUpdateDto,
+  ): Promise<Appointment> {
+    const appointment = await this.searchForId(id);
+    Object.assign(appointment, updateDto);
+
+    try {
+      return this.appointmentRepository.save(appointment);
+    } catch (error) {
+      throw new InternalServerErrorException(`Failed to update appointment`);
+    }
+  }
+
+  async delete(id: number): Promise<Appointment> {
+    const appointment = await this.searchForId(id);
+    if (appointment) {
+      try {
+        return this.appointmentRepository.remove(appointment);
+      } catch (error) {
+        throw new InternalServerErrorException(`Failed to delete appointment`);
+      }
     }
   }
 
@@ -227,9 +266,9 @@ export default class AppointmentService implements OnModuleInit {
     }
   }
 
-  private async ensureNoExistingAppointment(
+  private async ExistingAppointment(
     scheduledStart: Date,
-  ): Promise<void> {
+  ): Promise<Appointment> {
     const existingAppointment = await this.appointmentRepository.findOne({
       where: { scheduled_start: scheduledStart },
     });
@@ -237,9 +276,7 @@ export default class AppointmentService implements OnModuleInit {
     if (!existingAppointment) {
       return null;
     }
-    throw new BadRequestException(
-      'An appointment is already scheduled at this time.',
-    );
+    return existingAppointment;
   }
 
   private async getOrCreateCustomer(
@@ -281,5 +318,13 @@ export default class AppointmentService implements OnModuleInit {
     await this.whatsAppService.sendInteractiveMessage(phone, formattedMessage, [
       WhatsAppService.CONFIRM,
     ]);
+  }
+
+  async searchForId(id: number): Promise<Appointment> {
+    const appointment = await this.appointmentRepository.findOneBy({ id });
+    if (!appointment) {
+      throw new NotFoundException(`Appointment with ID: ${id} not found`);
+    }
+    return appointment;
   }
 }
