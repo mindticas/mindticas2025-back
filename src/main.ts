@@ -6,10 +6,7 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'https://mindticas2025-front-git-development-michelada-interns.vercel.app',
-    ],
+    origin: ['http://localhost:3000', process.env.URL_WEB],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     allowedHeaders: 'Content-Type,Authorization',
   });
