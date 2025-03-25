@@ -10,10 +10,12 @@ import {
   RoleModule,
   SeedModule,
   WhatsAppModule,
+  GoogleCalendarModule,
 } from './modules';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppDataSource } from './data-source';
 import { ScheduleModule } from '@nestjs/schedule';
+import googleConfig from './config/google.config';
 
 @Module({
   imports: [
@@ -21,6 +23,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: `.env.${process.env}`,
+      load: [googleConfig],
     }),
     TypeOrmModule.forRoot(AppDataSource.options),
     TreatmentModule,
@@ -30,6 +33,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     RoleModule,
     SeedModule,
     WhatsAppModule,
+    GoogleCalendarModule,
   ],
   controllers: [AppController],
   providers: [AppService],

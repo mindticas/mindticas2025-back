@@ -22,6 +22,7 @@
       "seed:run": "ts-node src/scripts/run-seeds.ts"
    },
    "dependencies": {
+      "@googleapis/calendar": "^9.8.0",
       "@nestjs/axios": "^4.0.0",
       "@nestjs/common": "^9.0.0",
       "@nestjs/config": "^4.0.0",
@@ -33,6 +34,7 @@
       "class-transformer": "^0.5.1",
       "class-validator": "^0.14.1",
       "dotenv": "^16.4.7",
+      "googleapis": "^146.0.0",
       "pg": "^8.4.0",
       "reflect-metadata": "^0.1.13",
       "rxjs": "^7.2.0",

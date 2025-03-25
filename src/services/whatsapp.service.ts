@@ -59,7 +59,7 @@ export default class WhatsAppService {
       );
       return response.data;
     } catch (error) {
-      this.logger.error(`Error al enviar el mensaje: ${error.message}`);
+      this.logger.error(`Error sending simple message: ${error.message}`);
       this.handleError(error);
     }
   }
@@ -87,17 +87,9 @@ export default class WhatsAppService {
           headers: this.getHeaders(),
         }),
       );
-      this.logger.log(`Enviando payload: ${JSON.stringify(data)}`);
       return response.data;
     } catch (error) {
-      console.error(
-        'Error sending interactive message:',
-        error.response?.data || error.message,
-      );
-      throw new HttpException(
-        error.response?.data || 'Error sending interactive message:',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      this.logger.error(`Error sending interactive message: ${error.message}`);
     }
   }
 
