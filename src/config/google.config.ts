@@ -6,4 +6,5 @@ export default registerAs('google', () => ({
   projectId: process.env.GOOGLE_PROJECT_ID,
   redirectURI: process.env.GOOGLE_REDIRECT_URI,
   refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
+  googleScope: process.env.GOOGLE_SCOPE,
 }));

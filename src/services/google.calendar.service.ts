@@ -66,9 +66,9 @@ export default class GoogleCalendarService {
         calendarId: 'primary',
         eventId: eventId,
       });
-      this.logger.log(`Evento con ID ${eventId} eliminado correctamente.`);
+      this.logger.log(`Event ID ${eventId} successfully deleted.`);
     } catch (error) {
-      this.logger.error(`Error al eliminar el evento: ${error.message}`);
+      this.logger.error(`Error deleting event: ${error.message}`);
     }
   }
 }

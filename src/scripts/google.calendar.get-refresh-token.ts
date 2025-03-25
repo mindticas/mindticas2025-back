@@ -14,7 +14,7 @@ const oAuth2Client = new google.auth.OAuth2(
   config.redirectURI,
 );
 
-const SCOPES = ['https://www.googleapis.com/auth/calendar'];
+const SCOPES = [config.googleScope];
 
 const authUrl = oAuth2Client.generateAuthUrl({
   access_type: 'offline',
@@ -33,7 +33,7 @@ const rl = readline.createInterface({
 });
 
 rl.question(
-  '\n\u270F\uFE0F Ingresa el código de autorización aquí: ',
+  '\n\u270F\uFE0F Enter the authorization code here: ',
   async (code) => {
     rl.close();
 
@@ -48,7 +48,7 @@ rl.question(
       }
 
       console.log(
-        '\n\u2705 Refresh Token obtenido correctamente:',
+        '\n\u2705 Refresh Token obtained successfully: ',
         tokens.refresh_token,
       );
 
@@ -66,9 +66,9 @@ rl.question(
 
       fs.writeFileSync(envFilePath, envConfig);
 
-      console.log('\n\uD83D\uDD04 Refresh Token guardado en el archivo .env');
+      console.log('\n\uD83D\uDD04 Refresh Token saved in the .env file');
     } catch (error) {
-      console.error('\n\u274C Error al obtener el token:', error.message);
+      console.error('\n\u274C Error getting token: ', error.message);
       process.exit(1);
     }
   },
