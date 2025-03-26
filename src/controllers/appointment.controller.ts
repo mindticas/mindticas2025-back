@@ -33,7 +33,7 @@ export default class AppointmentController {
   @Patch(':id')
   async update(
     @Param('id') id: number,
-    dto: AppointmentUpdateDto,
+    @Body() dto: AppointmentUpdateDto,
   ): Promise<Appointment> {
     return await this.appointmentService.update(id, dto);
   }

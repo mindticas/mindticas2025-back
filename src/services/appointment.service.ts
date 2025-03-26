@@ -43,7 +43,7 @@ export default class AppointmentService implements OnModuleInit {
 
   get(): Promise<Appointment[]> {
     return this.appointmentRepository.find({
-      relations: { user: true, customer: true, treatments: true },
+      relations: { customer: true, treatments: true },
     });
   }
 
@@ -108,7 +108,20 @@ export default class AppointmentService implements OnModuleInit {
     updateDto: AppointmentUpdateDto,
   ): Promise<Appointment> {
     const appointment = await this.searchForId(id);
-    Object.assign(appointment, updateDto);
+
+    console.log(appointment);
+
+    console.log(appointment.customer.name);
+    if (updateDto.customer_name) {
+      appointment.customer.name = updateDto.customer_name;
+    }
+
+    console.log(appointment.customer.name);
+
+    if (updateDto.treatment_name) {
+      appointment.treatments[0].name = updateDto.treatment_name;
+    }
+    Object.assign(appointment, updateDto, appointment.customer.name);
 
     try {
       return this.appointmentRepository.save(appointment);
@@ -322,7 +335,10 @@ export default class AppointmentService implements OnModuleInit {
   }
 
   async searchForId(id: number): Promise<Appointment> {
-    const appointment = await this.appointmentRepository.findOneBy({ id });
+    const appointment = await this.appointmentRepository.findOne({
+      where: { id },
+      relations: ['treatments', 'customer'],
+    });
     if (!appointment) {
       throw new NotFoundException(`Appointment with ID: ${id} not found`);
     }

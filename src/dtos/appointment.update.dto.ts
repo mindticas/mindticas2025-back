@@ -1,11 +1,9 @@
+import { Transform } from 'class-transformer';
 import {
-  IsNumber,
   IsString,
   IsDateString,
   IsNotEmpty,
   MaxLength,
-  ArrayNotEmpty,
-  IsArray,
   IsOptional,
 } from 'class-validator';
 
@@ -14,23 +12,24 @@ export default class AppointmentUpdateDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(50)
-  name?: string;
+  @Transform(({ value }) => value, { toClassOnly: true })
+  customer_name?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(50)
+  @Transform(({ value }) => value, { toClassOnly: true })
+  treatment_name?: string;
 
   @IsOptional()
   @IsString()
   @IsNotEmpty()
   @MaxLength(15)
-  phone?: string;
+  status?: string;
 
   @IsOptional()
   @IsDateString()
   @IsNotEmpty()
   scheduled_start?: string;
-
-  @IsOptional()
-  @IsNumber({}, { each: true })
-  @IsNotEmpty({ each: true })
-  @IsArray()
-  @ArrayNotEmpty()
-  treatment_ids?: number[];
 }
