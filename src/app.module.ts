@@ -14,7 +14,6 @@ import {
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppDataSource } from './data-source';
 import { ScheduleModule } from '@nestjs/schedule';
-import { AuthModule } from './modules/auth.module';
 
 @Module({
   imports: [
@@ -31,8 +30,6 @@ import { AuthModule } from './modules/auth.module';
     RoleModule,
     SeedModule,
     WhatsAppModule,
-    AuthModule,
-    UserModule,
   ],
   controllers: [AppController],
   providers: [AppService],
