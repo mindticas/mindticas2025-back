@@ -34,32 +34,34 @@ describe('UserService', () => {
       id: 1,
       name: 'Kevin',
       password: 'hashedpassword',
-      phone: '3125463221',  // Añadido
-      email: 'kevin@example.com', // Añadido
+      phone: '3125463221',
+      email: 'kevin@example.com',
       role: {
         id: 1,
         name: 'admin',
-        users: [],  // Ahora el role tiene la propiedad 'users'
-      },  
-      appointments: [],  // Añadido
+        users: [],
+      },
+      appointments: [],
     };
 
-    // Simula el comportamiento de `findOne` para devolver un usuario
     jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser);
 
     const user = await userService.findByName('Kevin');
 
-    expect(user).toEqual(mockUser); // Verifica que el usuario encontrado sea el esperado
-    expect(userRepository.findOne).toHaveBeenCalledWith({ where: { name: 'Kevin' } }); // Verifica que `findOne` se haya llamado correctamente
+    expect(user).toEqual(mockUser);
+    expect(userRepository.findOne).toHaveBeenCalledWith({
+      where: { name: 'Kevin' },
+    });
   });
 
   it('should return null if no user is found by name', async () => {
-    // Simula que no se encuentra un usuario
     jest.spyOn(userRepository, 'findOne').mockResolvedValue(null);
 
     const user = await userService.findByName('NonExistentName');
 
-    expect(user).toBeNull(); // Verifica que no se haya encontrado un usuario
-    expect(userRepository.findOne).toHaveBeenCalledWith({ where: { name: 'NonExistentName' } }); // Verifica que `findOne` se haya llamado correctamente
+    expect(user).toBeNull();
+    expect(userRepository.findOne).toHaveBeenCalledWith({
+      where: { name: 'NonExistentName' },
+    });
   });
 });
