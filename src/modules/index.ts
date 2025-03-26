@@ -5,3 +5,4 @@ export { default as UserModule } from './user.module';
 export { default as RoleModule } from './role.module';
 export { default as SeedModule } from './seed.module';
 export { default as WhatsAppModule } from './whatsapp.module';
+export { default as GoogleCalendarModule } from './google.calendar.module';

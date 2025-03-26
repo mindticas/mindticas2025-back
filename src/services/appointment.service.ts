@@ -21,6 +21,7 @@ import * as messages from '../templates/whatsapp.messages.json';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
 import { formatMessage, generateParams } from '../utils/messageFormatter';
+import GoogleCalendarService from './google.calendar.service';
 
 @Injectable()
 export default class AppointmentService implements OnModuleInit {
@@ -37,6 +38,7 @@ export default class AppointmentService implements OnModuleInit {
     private readonly customerService: CustomerService,
     private readonly whatsAppService: WhatsAppService,
     private readonly schedulerRegistry: SchedulerRegistry,
+    private readonly googleCalendarService: GoogleCalendarService,
   ) {}
 
   get(): Promise<Appointment[]> {
@@ -78,28 +80,27 @@ export default class AppointmentService implements OnModuleInit {
       treatments,
     });
 
+    let savdAppt;
+
     try {
-      const savedAppointment = await this.appointmentRepository.save(
-        appointment,
-      );
-
-      try {
-        await this.sendAppointmentConfirmationMessage(
-          customer.phone,
-          scheduledStart,
-          treatments,
-        );
-        this.scheduleReminderMessage(savedAppointment);
-      } catch (error) {
-        this.logger.error(`Error connecting to whapi: ${error.message}`);
-      }
-
-      return savedAppointment;
+      savdAppt = await this.appointmentRepository.save(appointment);
     } catch (error) {
       throw new InternalServerErrorException(
         `Error creating appointment: ${error.message}`,
       );
     }
+
+    this.sendAppointmentConfirmationMessage(
+      customer.phone,
+      scheduledStart,
+      treatments,
+    );
+
+    this.scheduleReminderMessage(savdAppt);
+
+    this.googleCalendarService.createEvent(savdAppt);
+
+    return savdAppt;
   }
 
   async update(

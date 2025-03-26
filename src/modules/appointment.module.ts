@@ -5,12 +5,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Appointment, User, Customer, Treatment } from '../entities';
 import WhatsAppModule from './whatsapp.module';
 import CustomerModule from './customer.module';
+import GoogleCalendarModule from './google.calendar.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Appointment, User, Customer, Treatment]),
     forwardRef(() => CustomerModule),
     forwardRef(() => WhatsAppModule),
+    GoogleCalendarModule,
   ],
   controllers: [AppointmentController],
   providers: [AppointmentService],
