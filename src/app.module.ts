@@ -16,6 +16,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppDataSource } from './data-source';
 import { ScheduleModule } from '@nestjs/schedule';
 import googleConfig from './config/google.config';
+import { AuthModule } from './modules/auth.module';
 
 @Module({
   imports: [
@@ -34,6 +35,8 @@ import googleConfig from './config/google.config';
     SeedModule,
     WhatsAppModule,
     GoogleCalendarModule,
+    AuthModule,
+    UserModule,
   ],
   controllers: [AppController],
   providers: [AppService],
