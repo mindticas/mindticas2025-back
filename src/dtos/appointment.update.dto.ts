@@ -5,6 +5,7 @@ import {
   IsNotEmpty,
   MaxLength,
   IsOptional,
+  IsNumber,
 } from 'class-validator';
 
 export default class AppointmentUpdateDto {
@@ -16,11 +17,9 @@ export default class AppointmentUpdateDto {
   customer_name?: string;
 
   @IsOptional()
-  @IsString()
   @IsNotEmpty()
-  @MaxLength(50)
-  @Transform(({ value }) => value, { toClassOnly: true })
-  treatment_name?: string;
+  @IsNumber()
+  treatment_id?: number;
 
   @IsOptional()
   @IsString()

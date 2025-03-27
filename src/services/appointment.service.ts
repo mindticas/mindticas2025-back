@@ -109,22 +109,35 @@ export default class AppointmentService implements OnModuleInit {
   ): Promise<Appointment> {
     const appointment = await this.searchForId(id);
 
-    console.log(appointment);
+    if (updateDto.customer_name) {
+      const customer = appointment.customer;
+      customer.name = updateDto.customer_name;
+      await this.customerRepository.save(customer);
+    }
 
-    console.log(appointment.customer.name);
+    if (updateDto.treatment_id) {
+      const treatment = await this.treatmentRepository.findOne({
+        where: { id: updateDto.treatment_id },
+      });
+
+      if (!treatment) {
+        throw new NotFoundException(
+          `Treatment with ID: ${updateDto.treatment_id} not found`,
+        );
+      }
+
+      appointment.treatments = [treatment];
+    }
+
+    Object.assign(appointment, updateDto);
     if (updateDto.customer_name) {
       appointment.customer.name = updateDto.customer_name;
+      appointment.customer = { ...appointment.customer };
     }
-
-    console.log(appointment.customer.name);
-
-    if (updateDto.treatment_name) {
-      appointment.treatments[0].name = updateDto.treatment_name;
-    }
-    Object.assign(appointment, updateDto, appointment.customer.name);
 
     try {
-      return this.appointmentRepository.save(appointment);
+      const app = await this.appointmentRepository.save(appointment);
+      return app;
     } catch (error) {
       throw new InternalServerErrorException(`Failed to update appointment`);
     }
@@ -337,7 +350,7 @@ export default class AppointmentService implements OnModuleInit {
   async searchForId(id: number): Promise<Appointment> {
     const appointment = await this.appointmentRepository.findOne({
       where: { id },
-      relations: ['treatments', 'customer'],
+      relations: ['customer', 'treatments'],
     });
     if (!appointment) {
       throw new NotFoundException(`Appointment with ID: ${id} not found`);
