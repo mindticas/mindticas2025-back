@@ -14,7 +14,6 @@ export default class AppointmentUpdateDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(50)
-  @Transform(({ value }) => value, { toClassOnly: true })
   customer_name?: string;
 
   @IsOptional()

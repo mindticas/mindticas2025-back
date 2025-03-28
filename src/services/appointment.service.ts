@@ -119,8 +119,16 @@ export default class AppointmentService implements OnModuleInit {
         where: { id: In(updateDto.treatments_id) },
       });
 
-      if (treatments.length !== updateDto.treatments_id.length) {
-        throw new NotFoundException(`Some treatments not found`);
+      let notFoundTreatmentIds: number[] = [];
+
+      notFoundTreatmentIds = updateDto.treatments_id.filter(
+        (id) => !treatments.some((treatment) => treatment.id === id),
+      );
+  
+      if (notFoundTreatmentIds.length > 0) {
+        throw new NotFoundException(
+          `Error updating treatments: Treatments with IDs ${notFoundTreatmentIds.join(', ')} not found`
+        );
       }
 
       appointment.treatments = treatments;
