@@ -10,7 +10,7 @@ import {
 import { TreatmentService } from '../services';
 import { CreateTreatmentDTO, UpdateTreatmentDTO } from '../dtos';
 
-@Controller('/treatment')
+@Controller('treatment')
 export default class TreatmentController {
   constructor(private treatmentService: TreatmentService) {}
 
