@@ -43,7 +43,7 @@ export default class AppointmentService implements OnModuleInit {
 
   get(): Promise<Appointment[]> {
     return this.appointmentRepository.find({
-      relations: { user: true, customer: true, treatments: true },
+      relations: { customer: true, treatments: true },
     });
   }
 
@@ -108,10 +108,41 @@ export default class AppointmentService implements OnModuleInit {
     updateDto: AppointmentUpdateDto,
   ): Promise<Appointment> {
     const appointment = await this.searchForId(id);
+
+    if (updateDto.customer_name) {
+      appointment.customer.name = updateDto.customer_name;
+      await this.customerRepository.save(appointment.customer);
+    }
+
+    if (updateDto.treatments_id && Array.isArray(updateDto.treatments_id)) {
+      const treatments = await this.treatmentRepository.find({
+        where: { id: In(updateDto.treatments_id) },
+      });
+
+      let notFoundTreatmentIds: number[] = [];
+
+      notFoundTreatmentIds = updateDto.treatments_id.filter(
+        (id) => !treatments.some((treatment) => treatment.id === id),
+      );
+  
+      if (notFoundTreatmentIds.length > 0) {
+        throw new NotFoundException(
+          `Error updating treatments: Treatments with IDs ${notFoundTreatmentIds.join(', ')} not found`
+        );
+      }
+
+      appointment.treatments = treatments;
+    }
+
     Object.assign(appointment, updateDto);
+    if (updateDto.customer_name) {
+      appointment.customer.name = updateDto.customer_name;
+      appointment.customer = { ...appointment.customer };
+    }
 
     try {
-      return this.appointmentRepository.save(appointment);
+      const app = await this.appointmentRepository.save(appointment);
+      return app;
     } catch (error) {
       throw new InternalServerErrorException(`Failed to update appointment`);
     }
@@ -322,7 +353,10 @@ export default class AppointmentService implements OnModuleInit {
   }
 
   async searchForId(id: number): Promise<Appointment> {
-    const appointment = await this.appointmentRepository.findOneBy({ id });
+    const appointment = await this.appointmentRepository.findOne({
+      where: { id },
+      relations: ['customer', 'treatments'],
+    });
     if (!appointment) {
       throw new NotFoundException(`Appointment with ID: ${id} not found`);
     }
