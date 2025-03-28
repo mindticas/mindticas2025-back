@@ -110,23 +110,20 @@ export default class AppointmentService implements OnModuleInit {
     const appointment = await this.searchForId(id);
 
     if (updateDto.customer_name) {
-      const customer = appointment.customer;
-      customer.name = updateDto.customer_name;
-      await this.customerRepository.save(customer);
+      appointment.customer.name = updateDto.customer_name;
+      await this.customerRepository.save(appointment.customer);
     }
 
-    if (updateDto.treatment_id) {
-      const treatment = await this.treatmentRepository.findOne({
-        where: { id: updateDto.treatment_id },
+    if (updateDto.treatments_id && Array.isArray(updateDto.treatments_id)) {
+      const treatments = await this.treatmentRepository.find({
+        where: { id: In(updateDto.treatments_id) },
       });
 
-      if (!treatment) {
-        throw new NotFoundException(
-          `Treatment with ID: ${updateDto.treatment_id} not found`,
-        );
+      if (treatments.length !== updateDto.treatments_id.length) {
+        throw new NotFoundException(`Some treatments not found`);
       }
 
-      appointment.treatments = [treatment];
+      appointment.treatments = treatments;
     }
 
     Object.assign(appointment, updateDto);

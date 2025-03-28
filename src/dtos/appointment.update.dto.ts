@@ -5,7 +5,8 @@ import {
   IsNotEmpty,
   MaxLength,
   IsOptional,
-  IsNumber,
+  ArrayNotEmpty,
+  IsArray,
 } from 'class-validator';
 
 export default class AppointmentUpdateDto {
@@ -18,8 +19,9 @@ export default class AppointmentUpdateDto {
 
   @IsOptional()
   @IsNotEmpty()
-  @IsNumber()
-  treatment_id?: number;
+  @IsArray()
+  @ArrayNotEmpty()
+  treatments_id?: number;
 
   @IsOptional()
   @IsString()
