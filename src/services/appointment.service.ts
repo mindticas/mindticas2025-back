@@ -112,15 +112,23 @@ export default class AppointmentService implements OnModuleInit {
     updateDto: AppointmentUpdateDto,
   ): Promise<Appointment> {
     const appointment = await this.searchForId(id);
-    const scheduledStart = new Date(updateDto.scheduled_start);
 
-    if (await existingAppointment(scheduledStart, this.appointmentRepository)) {
-      throw new BadRequestException(
-        'Ya hay una cita agendada en esta horario.',
-      );
+    if (updateDto.scheduled_start) {
+      const scheduledStart = new Date(updateDto.scheduled_start);
+      if (isNaN(scheduledStart.getTime())) {
+        throw new BadRequestException('Invalid date format for scheduled_start');
+      }
+
+      if (await existingAppointment(scheduledStart, this.appointmentRepository)) {
+        throw new BadRequestException(
+          'Ya hay una cita agendada en este horario.',
+        );
+      }
+
+      await validateAppointment(scheduledStart);
+
+      appointment.scheduled_start = scheduledStart;
     }
-
-    await validateAppointment(scheduledStart);
 
     if (updateDto.customer_name) {
       appointment.customer.name = updateDto.customer_name;
