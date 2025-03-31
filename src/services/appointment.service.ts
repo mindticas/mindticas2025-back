@@ -64,7 +64,7 @@ export default class AppointmentService implements OnModuleInit {
 
     if (await existingAppointment(scheduledStart, this.appointmentRepository)) {
       throw new BadRequestException(
-        'An appointment is already scheduled at this time.',
+        'Ya hay una cita agendada en esta horario.',
       );
     }
 
@@ -116,7 +116,7 @@ export default class AppointmentService implements OnModuleInit {
 
     if (await existingAppointment(scheduledStart, this.appointmentRepository)) {
       throw new BadRequestException(
-        'An appointment is already scheduled at this time.',
+        'Ya hay una cita agendada en esta horario.',
       );
     }
 
