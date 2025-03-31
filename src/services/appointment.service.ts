@@ -22,6 +22,10 @@ import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
 import { formatMessage, generateParams } from '../utils/messageFormatter';
 import GoogleCalendarService from './google.calendar.service';
+import {
+  validateAppointment,
+  existingAppointment,
+} from '../utils/appointment.validations';
 
 @Injectable()
 export default class AppointmentService implements OnModuleInit {
@@ -58,13 +62,13 @@ export default class AppointmentService implements OnModuleInit {
     const serviceDuration = this.calculateServiceDuration(treatments);
     const scheduledStart = new Date(createDto.scheduled_start);
 
-    if (await this.ExistingAppointment(scheduledStart)) {
+    if (await existingAppointment(scheduledStart, this.appointmentRepository)) {
       throw new BadRequestException(
         'An appointment is already scheduled at this time.',
       );
     }
 
-    this.validateAppointment(scheduledStart);
+    await validateAppointment(scheduledStart);
 
     const customer = await this.getOrCreateCustomer(createDto);
 
@@ -108,6 +112,15 @@ export default class AppointmentService implements OnModuleInit {
     updateDto: AppointmentUpdateDto,
   ): Promise<Appointment> {
     const appointment = await this.searchForId(id);
+    const scheduledStart = new Date(updateDto.scheduled_start);
+
+    if (await existingAppointment(scheduledStart, this.appointmentRepository)) {
+      throw new BadRequestException(
+        'An appointment is already scheduled at this time.',
+      );
+    }
+
+    await validateAppointment(scheduledStart);
 
     if (updateDto.customer_name) {
       appointment.customer.name = updateDto.customer_name;
@@ -124,7 +137,7 @@ export default class AppointmentService implements OnModuleInit {
       notFoundTreatmentIds = updateDto.treatments_id.filter(
         (id) => !treatments.some((treatment) => treatment.id === id),
       );
-  
+
       if (notFoundTreatmentIds.length > 0) {
         throw new NotFoundException(
           `Error updating treatments: Treatments with IDs ${notFoundTreatmentIds.join(', ')} not found`
@@ -284,31 +297,6 @@ export default class AppointmentService implements OnModuleInit {
     );
     if (!duration) throw new BadRequestException('Service duration not found');
     return duration;
-  }
-
-  private validateAppointment(start: Date): void {
-    const today = new Date();
-    const maxDate = new Date(today);
-    maxDate.setDate(today.getDate() + 7);
-
-    if (start > maxDate || start < today) {
-      throw new BadRequestException(
-        'Appointments must be scheduled within a range of the next 7 days.',
-      );
-    }
-  }
-
-  private async ExistingAppointment(
-    scheduledStart: Date,
-  ): Promise<Appointment> {
-    const existingAppointment = await this.appointmentRepository.findOne({
-      where: { scheduled_start: scheduledStart },
-    });
-
-    if (!existingAppointment) {
-      return null;
-    }
-    return existingAppointment;
   }
 
   private async getOrCreateCustomer(
