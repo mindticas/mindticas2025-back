@@ -23,7 +23,7 @@ export function validateAppointment(start: Date): void {
 
   if (start > maxDate || start < today) {
     throw new BadRequestException(
-      'Appointments must be scheduled within a range of the next 7 days.',
+      'Las citas deben programarse dentro de un intervalo de los 7 días siguientes.',
     );
   }
 }
