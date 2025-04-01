@@ -13,14 +13,17 @@ export class AuthService {
 
   async login(loginDto: LoginDto) {
     const user = await this.userService.findByName(loginDto.name);
+    if (!user) {
+      throw new UnauthorizedException('Credenciales Invalidas');
+    }
 
     const isPasswordValid = await bcryptjs.compare(
       loginDto.password,
       user.password,
     );
 
-    if (!user || !isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Credenciales Invalidas');
     }
 
     const payload = { name: user.name };
