@@ -18,7 +18,6 @@ export default class GoogleTokenService {
 
     if (token) {
       token.refreshToken = refreshToken;
-      token.updated_at = new Date();
       return await this.tokenRepository.save(token);
     } else {
       const newToken = this.tokenRepository.create({

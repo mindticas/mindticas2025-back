@@ -90,6 +90,14 @@ export default class AppointmentService {
 
     try {
       savedAppointment = await this.appointmentRepository.save(appointment);
+
+      this.sendAppointmentConfirmationMessage(
+        customer.phone,
+        scheduledStart,
+        treatments,
+      );
+
+      this.scheduleTasksService.scheduleCancellation(savedAppointment);
     } catch (error) {
       this.logger.error(
         `Error saving appointment: ${error.message}`,
@@ -99,13 +107,6 @@ export default class AppointmentService {
         `Error creating appointment: ${error.message}`,
       );
     }
-
-    this.sendAppointmentConfirmationMessage(
-      customer.phone,
-      scheduledStart,
-      treatments,
-    );
-    this.scheduleTasksService.scheduleCancellation(savedAppointment);
 
     return savedAppointment;
   }

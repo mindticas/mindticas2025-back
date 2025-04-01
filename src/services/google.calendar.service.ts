@@ -14,6 +14,7 @@ export default class GoogleCalendarService {
   private oAuth2Client;
   private calendar;
   private readonly logger = new Logger(GoogleCalendarService.name);
+  private readonly ACCOUNT_ID = 'Elegangsters Barbershop';
 
   constructor(
     private readonly configService: ConfigService,
@@ -29,7 +30,7 @@ export default class GoogleCalendarService {
   private async ensureAuth() {
     if (!this.oAuth2Client.credentials.refresh_token) {
       const refreshToken = await this.googleTokenService.getToken(
-        'Elegangsters Barbershop',
+        this.ACCOUNT_ID,
       );
       if (!refreshToken) {
         this.logger.warn(
