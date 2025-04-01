@@ -6,10 +6,12 @@ import {
   Param,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
 import { AppointmentService } from '../services';
 import { AppointmentRegisterDto, AppointmentUpdateDto } from '../dtos';
 import { Appointment } from '../entities';
+import { AuthGuard } from '../auth/auth.guard';
 
 @Controller('appointment')
 export default class AppointmentController {
@@ -31,6 +33,7 @@ export default class AppointmentController {
   }
 
   @Patch(':id')
+  @UseGuards(AuthGuard)
   async update(
     @Param('id') id: number,
     @Body() dto: AppointmentUpdateDto,
@@ -39,6 +42,7 @@ export default class AppointmentController {
   }
 
   @Delete(':id')
+  @UseGuards(AuthGuard)
   async delete(@Param('id') id: number) {
     return this.appointmentService.delete(id);
   }
