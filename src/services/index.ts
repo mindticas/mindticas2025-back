@@ -3,4 +3,6 @@ export { default as AppointmentService } from './appointment.service';
 export { default as CustomerService } from './customer.service';
 export { default as SeedService } from './seed.service';
 export { default as WhatsAppService } from './whatsapp.service';
+export { default as ScheduleTasksService } from './schedule.tasks.service';
 export { default as GoogleCalendarService } from './google.calendar.service';
+export { default as GoogleTokenService } from './google-token.service';

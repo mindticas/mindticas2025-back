@@ -1,12 +1,13 @@
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   InternalServerErrorException,
   Logger,
   NotFoundException,
-  OnModuleInit,
 } from '@nestjs/common';
 import { Injectable } from '@nestjs/common';
-import { Repository, In, MoreThan, Not } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Appointment, User, Customer, Treatment } from '../entities/';
 import {
   AppointmentRegisterDto,
@@ -18,17 +19,16 @@ import { Status } from '../enums/appointments.status.enum';
 import CustomerService from './customer.service';
 import WhatsAppService from './whatsapp.service';
 import * as messages from '../templates/whatsapp.messages.json';
-import { SchedulerRegistry } from '@nestjs/schedule';
-import { CronJob } from 'cron';
 import { formatMessage, generateParams } from '../utils/messageFormatter';
 import GoogleCalendarService from './google.calendar.service';
 import {
   validateAppointment,
   existingAppointment,
 } from '../utils/appointment.validations';
+import ScheduleTasksService from './schedule.tasks.service';
 
 @Injectable()
-export default class AppointmentService implements OnModuleInit {
+export default class AppointmentService {
   private readonly logger = new Logger(AppointmentService.name);
   constructor(
     @InjectRepository(Appointment)
@@ -41,7 +41,8 @@ export default class AppointmentService implements OnModuleInit {
     private readonly treatmentRepository: Repository<Treatment>,
     private readonly customerService: CustomerService,
     private readonly whatsAppService: WhatsAppService,
-    private readonly schedulerRegistry: SchedulerRegistry,
+    @Inject(forwardRef(() => ScheduleTasksService))
+    private readonly scheduleTasksService: ScheduleTasksService,
     private readonly googleCalendarService: GoogleCalendarService,
   ) {}
 
@@ -83,28 +84,31 @@ export default class AppointmentService implements OnModuleInit {
       customer,
       treatments,
     });
-
-    let savdAppt;
+    const eventId = await this.googleCalendarService.createEvent(appointment);
+    appointment.eventId = eventId;
+    let savedAppointment;
 
     try {
-      savdAppt = await this.appointmentRepository.save(appointment);
+      savedAppointment = await this.appointmentRepository.save(appointment);
+
+      this.sendAppointmentConfirmationMessage(
+        customer.phone,
+        scheduledStart,
+        treatments,
+      );
+
+      this.scheduleTasksService.scheduleCancellation(savedAppointment);
     } catch (error) {
+      this.logger.error(
+        `Error saving appointment: ${error.message}`,
+        error.stack,
+      );
       throw new InternalServerErrorException(
         `Error creating appointment: ${error.message}`,
       );
     }
 
-    this.sendAppointmentConfirmationMessage(
-      customer.phone,
-      scheduledStart,
-      treatments,
-    );
-
-    this.scheduleReminderMessage(savdAppt);
-
-    this.googleCalendarService.createEvent(savdAppt);
-
-    return savdAppt;
+    return savedAppointment;
   }
 
   async update(
@@ -116,10 +120,14 @@ export default class AppointmentService implements OnModuleInit {
     if (updateDto.scheduled_start) {
       const scheduledStart = new Date(updateDto.scheduled_start);
       if (isNaN(scheduledStart.getTime())) {
-        throw new BadRequestException('Invalid date format for scheduled_start');
+        throw new BadRequestException(
+          'Invalid date format for scheduled_start',
+        );
       }
 
-      if (await existingAppointment(scheduledStart, this.appointmentRepository)) {
+      if (
+        await existingAppointment(scheduledStart, this.appointmentRepository)
+      ) {
         throw new BadRequestException(
           'Ya hay una cita agendada en este horario.',
         );
@@ -148,7 +156,9 @@ export default class AppointmentService implements OnModuleInit {
 
       if (notFoundTreatmentIds.length > 0) {
         throw new NotFoundException(
-          `Error updating treatments: Treatments with IDs ${notFoundTreatmentIds.join(', ')} not found`
+          `Error updating treatments: Treatments with IDs ${notFoundTreatmentIds.join(
+            ', ',
+          )} not found`,
         );
       }
 
@@ -173,6 +183,9 @@ export default class AppointmentService implements OnModuleInit {
     const appointment = await this.searchForId(id);
     if (appointment) {
       try {
+        if (appointment.eventId) {
+          this.googleCalendarService.deleteEvent(appointment.eventId);
+        }
         return this.appointmentRepository.remove(appointment);
       } catch (error) {
         throw new InternalServerErrorException(`Failed to delete appointment`);
@@ -199,77 +212,6 @@ export default class AppointmentService implements OnModuleInit {
       throw new BadRequestException(
         `Error getting the last appointment: ${error.message}`,
       );
-    }
-  }
-
-  scheduleReminderMessage(appointment: Appointment) {
-    try {
-      const reminderTime = new Date(appointment.scheduled_start);
-      reminderTime.setHours(reminderTime.getHours() - 12);
-
-      const now = new Date();
-      if (reminderTime <= now) {
-        this.logger.log(
-          `Appointment reminder time exceeded: ${appointment.id}.`,
-        );
-        return null;
-      }
-
-      const job = new CronJob(reminderTime, async () => {
-        try {
-          const currentAppointment = await this.appointmentRepository.findOne({
-            where: { id: appointment.id },
-            relations: ['customer'],
-          });
-
-          if (
-            currentAppointment &&
-            currentAppointment.status !== Status.CANCELED
-          ) {
-            const reminderText = messages['appointment_reminder'];
-            await this.whatsAppService.sendInteractiveMessage(
-              currentAppointment.customer.phone,
-              reminderText,
-              [WhatsAppService.CANCEL],
-            );
-            this.logger.log(`Reminder sent to appointment: ${appointment.id}`);
-          }
-        } catch (error) {
-          this.logger.error(`Error sending reminder: ${error.message}`);
-        }
-      });
-
-      const jobName = `reminder_${appointment.id}`;
-      this.schedulerRegistry.addCronJob(jobName, job);
-      job.start();
-
-      this.logger.log(
-        `Scheduled reminder, appointment: ${appointment.id}/${reminderTime}`,
-      );
-    } catch (error) {
-      this.logger.error(`Error scheduling reminder: ${error.message}`);
-    }
-  }
-
-  async onModuleInit() {
-    try {
-      const pendingAppointments = await this.appointmentRepository.find({
-        where: {
-          scheduled_start: MoreThan(new Date()),
-          status: Not(Status.CANCELED),
-        },
-        relations: ['customer'],
-      });
-
-      this.logger.log(
-        `Programming ${pendingAppointments.length} reminders at startup`,
-      );
-
-      for (const appointment of pendingAppointments) {
-        this.scheduleReminderMessage(appointment);
-      }
-    } catch (error) {
-      this.logger.error(`Error initializing reminders: ${error.message}`);
     }
   }
 

@@ -41,7 +41,7 @@ export default class WhatsAppService {
     this.validateEnvVariables();
   }
 
-  async sendMessage(phone: string, message: string): Promise<any> {
+  async sendMessage(phone: string, message: string): Promise<boolean> {
     try {
       const phoneF = `521${phone}@s.whatsapp.net`;
       const response = await firstValueFrom(
@@ -57,7 +57,7 @@ export default class WhatsAppService {
           },
         ),
       );
-      return response.data;
+      return response.status === 200;
     } catch (error) {
       this.logger.error(`Error sending simple message: ${error.message}`);
       this.handleError(error);
@@ -68,7 +68,7 @@ export default class WhatsAppService {
     phone: string,
     message: string,
     buttons: { id: string; type: string; title: string }[],
-  ): Promise<any> {
+  ): Promise<boolean> {
     try {
       const formattedPhone = `521${phone}@s.whatsapp.net`;
       const data = {
@@ -87,9 +87,10 @@ export default class WhatsAppService {
           headers: this.getHeaders(),
         }),
       );
-      return response.data;
+      return response.status === 200;
     } catch (error) {
       this.logger.error(`Error sending interactive message: ${error.message}`);
+      return false;
     }
   }
 
@@ -183,6 +184,18 @@ export default class WhatsAppService {
     }
     if (!this.channelId) {
       this.logger.error('Invalid Channel Id');
+    }
+  }
+
+  async isConnected(): Promise<boolean> {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get(`${this.apiUrl}/health`),
+      );
+      return response.status === 200;
+    } catch (error) {
+      this.logger.error('Unable to connect to WHAPI: ', error.message);
+      return false;
     }
   }
 }

@@ -53,4 +53,7 @@ export default class Appointment {
   })
   @JoinTable()
   treatments: Treatment[];
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  eventId?: string;
 }

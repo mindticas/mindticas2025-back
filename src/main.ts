@@ -1,10 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { AppDataSource } from './data-source';
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const logger = new Logger('Bootstrap');
   app.enableCors({
     origin: ['http://localhost:3000', process.env.URL_WEB],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
@@ -18,8 +19,10 @@ async function bootstrap() {
     }),
   );
   AppDataSource.initialize()
-    .then(() => console.log('Database connected'))
-    .catch((err) => console.error('Database connection error:', err));
+    .then(() => logger.log('Database connected'))
+    .catch((err) =>
+      logger.error(`Database connection error: ${err.message}`, err.stack),
+    );
   await app.listen(3000);
 }
 
