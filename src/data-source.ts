@@ -1,6 +1,13 @@
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
-import { Appointment, Customer, Treatment, User, Role } from './entities';
+import {
+  Appointment,
+  Customer,
+  Treatment,
+  User,
+  Role,
+  GoogleToken,
+} from './entities';
 
 import 'dotenv/config';
 
@@ -21,7 +28,7 @@ export const AppDataSource = new DataSource({
   migrationsRun: true,
   logging: false,
   ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
-  entities: [Appointment, Customer, Treatment, User, Role],
+  entities: [Appointment, Customer, Treatment, User, Role, GoogleToken],
   migrations: ['./migration/*.ts'],
   subscribers: [],
 });
