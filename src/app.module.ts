@@ -12,6 +12,7 @@ import {
   WhatsAppModule,
   GoogleCalendarModule,
   StatisticsModule,
+  SchedulingModule,
 } from './modules';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppDataSource } from './data-source';
@@ -39,6 +40,7 @@ import { AuthModule } from './modules/auth.module';
     AuthModule,
     UserModule,
     StatisticsModule,
+    SchedulingModule,
   ],
   controllers: [AppController],
   providers: [AppService],
