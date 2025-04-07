@@ -7,3 +7,4 @@ export { default as SeedModule } from './seed.module';
 export { default as WhatsAppModule } from './whatsapp.module';
 export { default as ScheduleTasksModule } from './schedule.tasks.module';
 export { default as GoogleCalendarModule } from './google.calendar.module';
+export { default as StatisticsModule } from './statistics.module';
