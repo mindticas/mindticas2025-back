@@ -5,12 +5,11 @@ import {
   Get,
   Param,
   Patch,
-  Post,
   UseGuards,
 } from '@nestjs/common';
 import { ScheduleService } from '../services/schedue.service';
 import Schedule from '../entities/schedule.entity';
-import { CreateScheduleDTO, UpdateScheduleDTO } from '../dtos';
+import { UpdateScheduleDTO } from '../dtos';
 import { AuthGuard } from '../auth/auth.guard';
 
 @Controller('schedule')
@@ -20,11 +19,6 @@ export class ScheduleController {
   @Get()
   async get(): Promise<Schedule[]> {
     return await this.scheduleService.get();
-  }
-
-  @Post()
-  async create(@Body() dto: CreateScheduleDTO[]): Promise<Schedule[]> {
-    return await this.scheduleService.create(dto);
   }
 
   @Patch(':id')

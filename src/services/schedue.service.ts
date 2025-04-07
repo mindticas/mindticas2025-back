@@ -23,25 +23,6 @@ export class ScheduleService {
     }
   }
 
-  async create(dto: CreateScheduleDTO[]): Promise<Schedule[]> {
-    for (const scheduleDto of dto) {
-      const existingSchedule = await this.scheduleRepository.findOne({
-        where: { day: scheduleDto.day },
-      });
-
-      if (existingSchedule) {
-        throw new ConflictException('A schedule for this day already exists');
-      }
-    }
-
-    const schedule = this.scheduleRepository.create(dto);
-    try {
-      return this.scheduleRepository.save(schedule);
-    } catch (error) {
-      throw new BadRequestException(`Failed to create schedule`);
-    }
-  }
-
   async update(id: number, dto: UpdateScheduleDTO): Promise<Schedule> {
     const schedule = await this.scheduleRepository.findOneBy({ id });
 
