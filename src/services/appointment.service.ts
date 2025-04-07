@@ -26,6 +26,7 @@ import {
   existingAppointment,
 } from '../utils/appointment.validations';
 import ScheduleTasksService from './schedule.tasks.service';
+import { DateTime } from 'luxon';
 
 @Injectable()
 export default class AppointmentService {
@@ -46,15 +47,43 @@ export default class AppointmentService {
     private readonly googleCalendarService: GoogleCalendarService,
   ) {}
 
-  get(): Promise<Appointment[]> {
-    return this.appointmentRepository.find({
+  async get(): Promise<Appointment[]> {
+    const appointments = await this.appointmentRepository.find({
       relations: { customer: true, treatments: true },
     });
+
+    const adjustedAppointments = appointments.map((appointment) => {
+      const originalDate = DateTime.fromJSDate(appointment.scheduled_start, {
+        zone: 'utc',
+      });
+
+      const localDate = originalDate.setZone('local');
+      const offsetMinutes = localDate.offset;
+      const adjustedDate = originalDate.minus({ minutes: -offsetMinutes });
+
+      return {
+        ...appointment,
+        scheduled_start: adjustedDate.toJSDate(),
+      };
+    });
+
+    return adjustedAppointments;
   }
 
   async getById(id: number): Promise<Appointment> {
     const appointment = await this.searchForId(id);
-    return appointment;
+    const originalDate = DateTime.fromJSDate(appointment.scheduled_start, {
+      zone: 'utc',
+    });
+
+    const localDate = originalDate.setZone('local');
+    const offsetMinutes = localDate.offset;
+    const adjustedDate = originalDate.minus({ minutes: -offsetMinutes });
+
+    return {
+      ...appointment,
+      scheduled_start: adjustedDate.toJSDate(),
+    };
   }
 
   async create(createDto: AppointmentRegisterDto): Promise<Appointment> {
