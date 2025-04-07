@@ -1,6 +1,10 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { Appointment } from '../entities/index';
 import { ResponseStatisticsDto } from '../dtos';
 import { plainToClass } from 'class-transformer';
@@ -19,27 +23,39 @@ export default class StatisticsService {
       );
     }
 
-    const queryBuilder = this.appointmentRepository
-      .createQueryBuilder('appointment')
-      .select([
-        "COALESCE(SUM(CASE WHEN appointment.status = 'completed' " +
-          'THEN appointment.total_price ELSE 0 END), 0) AS totalEarnings',
-        'COALESCE(COUNT(appointment.id), 0) AS totalServices',
-        "COALESCE(SUM(CASE WHEN appointment.status = 'completed' THEN 1 ELSE 0 END)," +
-          ' 0) AS totalCompletedAppointments',
-        "COALESCE(SUM(CASE WHEN appointment.status = 'canceled' THEN 1 ELSE 0 END), 0)" +
-          'AS totalCanceledAppointments',
-      ])
-      .where(
-        'DATE(appointment.scheduled_start) BETWEEN :startDate AND :endDate',
-        {
-          startDate,
-          endDate,
-        },
-      );
+    const [
+      totalEarnings,
+      totalServices,
+      totalCompletedAppointments,
+      totalCanceledAppointments,
+    ] = await Promise.all([
+      this.getTotalEarnings(startDate, endDate, treatment),
+      this.getTotalServices(startDate, endDate, treatment),
+      this.getTotalCompletedAppointments(startDate, endDate, treatment),
+      this.getTotalCanceledAppointments(startDate, endDate, treatment),
+    ]);
+
+    return plainToClass(ResponseStatisticsDto, {
+      totalEarnings,
+      totalServices,
+      totalCompletedAppointments,
+      totalCanceledAppointments,
+    });
+  }
+
+  private applyFilters(
+    qb: SelectQueryBuilder<Appointment>,
+    startDate: string,
+    endDate: string,
+    treatment?: string,
+  ): SelectQueryBuilder<Appointment> {
+    qb.where(
+      'DATE(appointment.scheduled_start) BETWEEN :startDate AND :endDate',
+      { startDate, endDate },
+    );
 
     if (treatment) {
-      queryBuilder.innerJoin(
+      qb.innerJoin(
         'appointment.treatments',
         'treatment',
         'treatment.name = :treatment',
@@ -47,13 +63,99 @@ export default class StatisticsService {
       );
     }
 
-    const rawResult = await queryBuilder.getRawOne();
+    return qb;
+  }
 
-    return plainToClass(ResponseStatisticsDto, {
-      totalEarnings: rawResult.totalearnings,
-      totalServices: rawResult.totalservices,
-      totalCompletedAppointments: rawResult.totalcompletedappointments,
-      totalCanceledAppointments: rawResult.totalcanceledappointments,
-    });
+  private async getTotalEarnings(
+    startDate: string,
+    endDate: string,
+    treatment?: string,
+  ): Promise<number> {
+    try {
+      const qb = this.appointmentRepository
+        .createQueryBuilder('appointment')
+        .select('COALESCE(SUM(appointment.total_price), 0)', 'totalearnings');
+
+      this.applyFilters(qb, startDate, endDate, treatment);
+      qb.andWhere("appointment.status = 'completed'");
+
+      const result = await qb.getRawOne();
+      return Number(result?.totalearnings);
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Error al calcular los ingresos totales.',
+      );
+    }
+  }
+
+  private async getTotalServices(
+    startDate: string,
+    endDate: string,
+    treatment?: string,
+  ): Promise<number> {
+    try {
+      const qb = this.appointmentRepository
+        .createQueryBuilder('appointment')
+        .select('COALESCE(COUNT(appointment.id), 0)', 'totalservices');
+
+      this.applyFilters(qb, startDate, endDate, treatment);
+
+      const result = await qb.getRawOne();
+      return Number(result?.totalservices);
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Error al calcular el número total de servicios.',
+      );
+    }
+  }
+
+  private async getTotalCompletedAppointments(
+    startDate: string,
+    endDate: string,
+    treatment?: string,
+  ): Promise<number> {
+    try {
+      const qb = this.appointmentRepository
+        .createQueryBuilder('appointment')
+        .select(
+          'COALESCE(COUNT(appointment.id), 0)',
+          'totalcompletedappointments',
+        );
+
+      this.applyFilters(qb, startDate, endDate, treatment);
+      qb.andWhere("appointment.status = 'completed'");
+
+      const result = await qb.getRawOne();
+      return Number(result?.totalcompletedappointments);
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Error al calcular las citas completadas.',
+      );
+    }
+  }
+
+  private async getTotalCanceledAppointments(
+    startDate: string,
+    endDate: string,
+    treatment?: string,
+  ): Promise<number> {
+    try {
+      const qb = this.appointmentRepository
+        .createQueryBuilder('appointment')
+        .select(
+          'COALESCE(COUNT(appointment.id), 0)',
+          'totalcanceledappointments',
+        );
+
+      this.applyFilters(qb, startDate, endDate, treatment);
+      qb.andWhere("appointment.status = 'canceled'");
+
+      const result = await qb.getRawOne();
+      return Number(result?.totalcanceledappointments);
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Error al calcular las citas canceladas.',
+      );
+    }
   }
 }
