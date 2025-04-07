@@ -13,6 +13,7 @@ import {
   AppointmentRegisterDto,
   CustomerRegisterDto,
   AppointmentUpdateDto,
+  UserNameDto,
 } from '../dtos';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Status } from '../enums/appointments.status.enum';
@@ -47,9 +48,9 @@ export default class AppointmentService {
     private readonly googleCalendarService: GoogleCalendarService,
   ) {}
 
-  async get(): Promise<Appointment[]> {
+  async get(): Promise<any[]> {
     const appointments = await this.appointmentRepository.find({
-      relations: { customer: true, treatments: true },
+      relations: { user: true, customer: true, treatments: true },
     });
 
     const adjustedAppointments = appointments.map((appointment) => {
@@ -61,16 +62,20 @@ export default class AppointmentService {
       const offsetMinutes = localDate.offset;
       const adjustedDate = originalDate.minus({ minutes: -offsetMinutes });
 
+      const userNameDto = new UserNameDto();
+      userNameDto.name = appointment.user.name;
+
       return {
         ...appointment,
         scheduled_start: adjustedDate.toJSDate(),
+        user: userNameDto,
       };
     });
 
     return adjustedAppointments;
   }
 
-  async getById(id: number): Promise<Appointment> {
+  async getById(id: number): Promise<any> {
     const appointment = await this.searchForId(id);
     const originalDate = DateTime.fromJSDate(appointment.scheduled_start, {
       zone: 'utc',
@@ -80,9 +85,13 @@ export default class AppointmentService {
     const offsetMinutes = localDate.offset;
     const adjustedDate = originalDate.minus({ minutes: -offsetMinutes });
 
+    const userNameDto = new UserNameDto();
+    userNameDto.name = appointment.user.name;
+
     return {
       ...appointment,
       scheduled_start: adjustedDate.toJSDate(),
+      user: userNameDto,
     };
   }
 
@@ -322,7 +331,7 @@ export default class AppointmentService {
   async searchForId(id: number): Promise<Appointment> {
     const appointment = await this.appointmentRepository.findOne({
       where: { id },
-      relations: ['customer', 'treatments'],
+      relations: ['user', 'customer', 'treatments'],
     });
     if (!appointment) {
       throw new NotFoundException(`Appointment with ID: ${id} not found`);
