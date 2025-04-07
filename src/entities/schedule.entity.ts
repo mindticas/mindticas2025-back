@@ -1,6 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, Index } from 'typeorm';
 
 @Entity()
+@Index('unique_day', ['day'], { unique: true })
 export default class Schedule {
   @PrimaryGeneratedColumn()
   id: number;

@@ -28,7 +28,7 @@ export class ScheduleController {
   }
 
   @Patch(':id')
-  //@UseGuards(AuthGuard)
+  @UseGuards(AuthGuard)
   async update(
     @Param('id') id: number,
     @Body() dto: UpdateScheduleDTO,

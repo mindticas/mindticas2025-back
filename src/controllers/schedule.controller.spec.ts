@@ -17,7 +17,7 @@ describe('ScheduleController', () => {
     save: jest.fn(),
     remove: jest.fn(),
     create: jest.fn(),
-    findOneBy: jest.fn(), // Asegúrate de simular 'findOneBy'
+    findOneBy: jest.fn(),
   };
 
   const mockJwtService = {
@@ -77,7 +77,7 @@ describe('ScheduleController', () => {
   it('should update the schedule successfully', async () => {
     const updateDto = { day: 'Lunes', open_hours: ['10:00', '11:00', '12:00'] };
     const updatedSchedule = { id: 1, ...updateDto };
-    mockScheduleRepository.findOneBy.mockResolvedValue(updatedSchedule); // Asegúrate de simular findOneBy correctamente
+    mockScheduleRepository.findOneBy.mockResolvedValue(updatedSchedule);
     mockScheduleRepository.save.mockResolvedValue(updatedSchedule);
 
     expect(await controller.update(1, updateDto)).toEqual(updatedSchedule);
@@ -85,7 +85,7 @@ describe('ScheduleController', () => {
 
   it('should throw NotFoundException if schedule does not exist when updating', async () => {
     const updateDto = { day: 'Lunes', open_hours: ['10:00', '11:00', '12:00'] };
-    mockScheduleRepository.findOneBy.mockResolvedValue(null); // Simula que no se encuentra el horario
+    mockScheduleRepository.findOneBy.mockResolvedValue(null);
 
     await expect(controller.update(1, updateDto)).rejects.toThrowError(
       'Schedule not found',
@@ -106,7 +106,7 @@ describe('ScheduleController', () => {
   });
 
   it('should throw BadRequestException if schedule does not exist when deleting', async () => {
-    mockScheduleRepository.findOneBy.mockResolvedValue(null); // Simula que no se encuentra el horario
+    mockScheduleRepository.findOneBy.mockResolvedValue(null);
 
     await expect(controller.delete(1)).rejects.toThrowError(
       'Schedule not found',
