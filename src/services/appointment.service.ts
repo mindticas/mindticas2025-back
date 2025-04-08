@@ -14,6 +14,7 @@ import {
   CustomerRegisterDto,
   AppointmentUpdateDto,
   UserNameDto,
+  AppointmentResponseDto,
 } from '../dtos';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Status } from '../enums/appointments.status.enum';
@@ -48,7 +49,7 @@ export default class AppointmentService {
     private readonly googleCalendarService: GoogleCalendarService,
   ) {}
 
-  async get(): Promise<any[]> {
+  async get(): Promise<AppointmentResponseDto[]> {
     const appointments = await this.appointmentRepository.find({
       relations: { user: true, customer: true, treatments: true },
     });
@@ -75,7 +76,7 @@ export default class AppointmentService {
     return adjustedAppointments;
   }
 
-  async getById(id: number): Promise<any> {
+  async getById(id: number): Promise<AppointmentResponseDto> {
     const appointment = await this.searchForId(id);
     const originalDate = DateTime.fromJSDate(appointment.scheduled_start, {
       zone: 'utc',

@@ -7,3 +7,4 @@ export { default as ResponseStatisticsDto } from './response.statistics.dto';
 export { default as CreateScheduleDTO } from './schedule.create.dto';
 export { default as UpdateScheduleDTO } from './schedule.update.dto';
 export { default as UserNameDto } from './user.name.get.dto';
+export { default as AppointmentResponseDto } from './appointment.get.response.dto';

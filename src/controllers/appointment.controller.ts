@@ -9,7 +9,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AppointmentService } from '../services';
-import { AppointmentRegisterDto, AppointmentUpdateDto } from '../dtos';
+import {
+  AppointmentRegisterDto,
+  AppointmentUpdateDto,
+  AppointmentResponseDto,
+} from '../dtos';
 import { Appointment } from '../entities';
 import { AuthGuard } from '../auth/auth.guard';
 
@@ -18,7 +22,7 @@ export default class AppointmentController {
   constructor(private readonly appointmentService: AppointmentService) {}
 
   @Get()
-  async get(): Promise<Appointment[]> {
+  async get(): Promise<AppointmentResponseDto[]> {
     return await this.appointmentService.get();
   }
 
