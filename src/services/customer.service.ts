@@ -28,17 +28,7 @@ export default class CustomerService {
       customerResponse.name = customer.name;
       customerResponse.phone = customer.phone;
 
-      customerResponse.appointments = customer.appointments.map(
-        (appointment) => {
-          const userNameDto = new UserNameDto();
-          userNameDto.name = appointment.user.name;
-
-          return {
-            ...appointment,
-            user: userNameDto,
-          };
-        },
-      );
+      this.customerMapping(customerResponse, customer);
 
       return customerResponse;
     });
@@ -58,15 +48,7 @@ export default class CustomerService {
     customerResponse.name = customer.name;
     customerResponse.phone = customer.phone;
 
-    customerResponse.appointments = customer.appointments.map((appointment) => {
-      const userNameDto = new UserNameDto();
-      userNameDto.name = appointment.user.name;
-
-      return {
-        ...appointment,
-        user: userNameDto,
-      };
-    });
+    this.customerMapping(customerResponse, customer);
 
     return customerResponse;
   }
@@ -105,5 +87,22 @@ export default class CustomerService {
       throw new NotFoundException(`Cliente con ID: ${id} no encontrado`);
     }
     return customer;
+  }
+
+  async customerMapping(
+    customerResponse,
+    customer,
+  ): Promise<CustomerResponseDto[]> {
+    customerResponse.appointments = customer.appointments.map((appointment) => {
+      const userNameDto = new UserNameDto();
+      userNameDto.name = appointment.user.name;
+
+      return {
+        ...appointment,
+        user: userNameDto,
+      };
+    });
+
+    return customerResponse;
   }
 }
