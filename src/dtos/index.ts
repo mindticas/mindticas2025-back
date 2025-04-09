@@ -8,3 +8,6 @@ export { default as CreateScheduleDTO } from './schedule.create.dto';
 export { default as UpdateScheduleDTO } from './schedule.update.dto';
 export { default as UserNameDto } from './user.name.get.dto';
 export { default as AppointmentResponseDto } from './appointment.get.response.dto';
+export { default as AppointmentDto } from './appointment.dto';
+export { default as CustomerDto } from './customer.dto';
+export { default as CustomerResponseDto } from './customer.get.response.dto';
