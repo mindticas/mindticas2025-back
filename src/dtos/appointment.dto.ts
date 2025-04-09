@@ -7,11 +7,13 @@ import {
   IsInt,
   IsUUID,
   IsNotEmpty,
+  IsString,
 } from 'class-validator';
 import { Status } from '../enums/appointments.status.enum';
-import { Customer, Treatment, User } from '../entities';
+import { Treatment } from '../entities';
+import { CustomerDto, UserNameDto } from './';
 
-export class AppointmentDto {
+export default class AppointmentDto {
   @IsNumber()
   @IsNotEmpty()
   id: number;
@@ -36,10 +38,11 @@ export class AppointmentDto {
   eventId?: string;
 
   @IsNotEmpty()
-  user: User;
+  @IsString()
+  user: UserNameDto;
 
   @IsNotEmpty()
-  customer: Customer;
+  customer: CustomerDto;
 
   @IsNotEmpty()
   treatments: Treatment[];
