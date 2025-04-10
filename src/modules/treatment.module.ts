@@ -9,6 +9,6 @@ import { AuthModule } from './auth.module';
   imports: [TypeOrmModule.forFeature([Treatment]), AuthModule],
   controllers: [TreatmentController],
   providers: [TreatmentService],
-  exports: [TypeOrmModule],
+  exports: [TreatmentService],
 })
 export default class TreatmentModule {}

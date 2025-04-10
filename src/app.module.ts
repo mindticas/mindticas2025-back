@@ -40,7 +40,6 @@ import authConfig from './config/auth.config';
     WhatsAppModule,
     GoogleCalendarModule,
     AuthModule,
-    UserModule,
     StatisticsModule,
     SchedulingModule,
   ],
