@@ -8,6 +8,8 @@ import { google } from 'googleapis';
 import { ConfigService } from '@nestjs/config';
 import { Appointment } from '../entities';
 import GoogleTokenService from './google-token.service';
+import { MoreThan, Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export default class GoogleCalendarService {
@@ -19,6 +21,8 @@ export default class GoogleCalendarService {
   constructor(
     private readonly configService: ConfigService,
     private readonly googleTokenService: GoogleTokenService,
+    @InjectRepository(Appointment)
+    private readonly appointmentRepository: Repository<Appointment>,
   ) {
     this.oAuth2Client = new google.auth.OAuth2(
       this.configService.get('google.clientId'),
@@ -59,13 +63,13 @@ export default class GoogleCalendarService {
       )}`,
       start: {
         dateTime: savdAppt.scheduled_start,
-        timeZone: 'America/Mexico_City',
+        timeZone: this.configService.get('google.timeZone'),
       },
       end: {
         dateTime: new Date(
           savdAppt.scheduled_start.getTime() + savdAppt.duration * 60000,
         ),
-        timeZone: 'America/Mexico_City',
+        timeZone: this.configService.get('google.timeZone'),
       },
       attendees: [savdAppt.user.email].map((email) => ({ email })),
       reminders: {
@@ -132,5 +136,37 @@ export default class GoogleCalendarService {
     }
 
     return tokens.refresh_token;
+  }
+
+  async syncMissingEvents() {
+    await this.ensureAuth();
+    if (!this.calendar) {
+      this.logger.warn('No calendar instance available after auth.');
+      return;
+    }
+
+    const now = new Date();
+
+    const appointments = await this.appointmentRepository.find({
+      where: {
+        eventId: null,
+        scheduled_start: MoreThan(now),
+      },
+      relations: ['customer', 'treatments', 'user'],
+    });
+
+    let totalSynchronizedEvents = 0;
+    for (const appt of appointments) {
+      if (!appt.eventId) {
+        const eventId = await this.createEvent(appt);
+        if (eventId) {
+          appt.eventId = eventId;
+          await this.appointmentRepository.save(appt);
+          totalSynchronizedEvents++;
+        }
+      }
+    }
+
+    this.logger.log(`Synchronized ${totalSynchronizedEvents} pending events.`);
   }
 }

@@ -27,6 +27,7 @@ import {
 } from '../utils/appointment.validations';
 import ScheduleTasksService from './schedule.tasks.service';
 import { DateTime } from 'luxon';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export default class AppointmentService {
@@ -45,6 +46,7 @@ export default class AppointmentService {
     @Inject(forwardRef(() => ScheduleTasksService))
     private readonly scheduleTasksService: ScheduleTasksService,
     private readonly googleCalendarService: GoogleCalendarService,
+    private readonly configService: ConfigService,
   ) {}
 
   async get(): Promise<Appointment[]> {
@@ -71,19 +73,7 @@ export default class AppointmentService {
   }
 
   async getById(id: number): Promise<Appointment> {
-    const appointment = await this.searchForId(id);
-    const originalDate = DateTime.fromJSDate(appointment.scheduled_start, {
-      zone: 'utc',
-    });
-
-    const localDate = originalDate.setZone('local');
-    const offsetMinutes = localDate.offset;
-    const adjustedDate = originalDate.minus({ minutes: -offsetMinutes });
-
-    return {
-      ...appointment,
-      scheduled_start: adjustedDate.toJSDate(),
-    };
+    return await this.searchForId(id);
   }
 
   async create(createDto: AppointmentRegisterDto): Promise<Appointment> {
@@ -124,6 +114,7 @@ export default class AppointmentService {
         customer.phone,
         scheduledStart,
         treatments,
+        savedAppointment.id,
       );
 
       this.scheduleTasksService.scheduleCancellation(savedAppointment);
@@ -305,11 +296,14 @@ export default class AppointmentService {
     phone: string,
     scheduledStart: Date,
     treatments: Treatment[],
+    appointmentId: number,
   ) {
     const params = generateParams(
       scheduledStart,
       treatments,
       'appointment_confirmation',
+      this.configService,
+      appointmentId,
     );
     const messageTemplate = messages['appointment_confirmation'];
     const formattedMessage = formatMessage(messageTemplate, params);

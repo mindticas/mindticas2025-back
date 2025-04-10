@@ -102,7 +102,7 @@ export default class ScheduleTasksService implements OnModuleInit {
       job.start();
 
       this.logger.log(
-        `Scheduled reminder, appointment: ${appointment.id}/${reminderTime}`,
+        `Scheduled reminder, appointment: id(${appointment.id}) / ${reminderTime}`,
       );
     } catch (error) {
       this.logger.error(`Error scheduling reminder: ${error.message}`);
