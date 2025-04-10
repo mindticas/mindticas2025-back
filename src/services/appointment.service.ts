@@ -151,6 +151,14 @@ export default class AppointmentService {
   ): Promise<Appointment> {
     const appointment = await this.searchForId(id);
 
+    if (
+      updateDto.status &&
+      updateDto.status === 'CANCELLED' &&
+      appointment.eventId
+    ) {
+      await this.googleCalendarService.deleteEvent(appointment.eventId);
+    }
+
     if (updateDto.scheduled_start) {
       const scheduledStart = new Date(updateDto.scheduled_start);
       if (isNaN(scheduledStart.getTime())) {
@@ -257,6 +265,9 @@ export default class AppointmentService {
       throw new NotFoundException(
         `Appointment with ID: ${appointmentId} not found`,
       );
+    }
+    if (status === Status.CANCELED) {
+      this.googleCalendarService.deleteEvent(appointment.eventId);
     }
     appointment.status = status;
     await this.appointmentRepository.save(appointment);

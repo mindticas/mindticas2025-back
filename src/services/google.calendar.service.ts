@@ -90,8 +90,8 @@ export default class GoogleCalendarService {
   }
 
   async deleteEvent(eventId: string) {
-    await this.ensureAuth();
     try {
+      await this.ensureAuth();
       await this.calendar.events.delete({
         calendarId: 'primary',
         eventId: eventId,

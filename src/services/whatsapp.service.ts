@@ -5,8 +5,8 @@ import AppointmentService from './appointment.service';
 import { formatMessage, generateParams } from '../utils/messageFormatter';
 import * as messagesTemplate from '../templates/whatsapp.messages.json';
 import { Status } from '../enums/appointments.status.enum';
-import { Appointment } from '../entities';
 import { ConfigService } from '@nestjs/config';
+import { AppointmentResponseDto } from '../dtos';
 
 @Injectable()
 export default class WhatsAppService {
@@ -167,7 +167,7 @@ export default class WhatsAppService {
   }
 
   private async handleAppointmentStatusChange(
-    appointment: Appointment,
+    appointment: AppointmentResponseDto,
     phoneNumber: string,
     status: 'confirmed' | 'canceled',
   ): Promise<any> {
