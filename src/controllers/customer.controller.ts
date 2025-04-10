@@ -7,14 +7,9 @@ import { Customer } from '../entities';
 export default class CustomerController {
   constructor(private readonly customerService: CustomerService) {}
 
-  @Get('sort')
-  async filters(@Query('param') param: string) {
-    return await this.customerService.filters(param);
-  }
-
   @Get()
-  async get(): Promise<CustomerResponseDto[]> {
-    return await this.customerService.get();
+  async get(@Query('param') param: string): Promise<CustomerResponseDto[]> {
+    return await this.customerService.get(param);
   }
 
   @Get(':id')
