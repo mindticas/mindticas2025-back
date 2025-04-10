@@ -7,6 +7,7 @@ import {
   User,
   Role,
   GoogleToken,
+  Schedule,
 } from './entities';
 
 import 'dotenv/config';
@@ -28,7 +29,15 @@ export const AppDataSource = new DataSource({
   migrationsRun: true,
   logging: false,
   ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
-  entities: [Appointment, Customer, Treatment, User, Role, GoogleToken],
+  entities: [
+    Appointment,
+    Customer,
+    Treatment,
+    User,
+    Role,
+    GoogleToken,
+    Schedule,
+  ],
   migrations: ['./migration/*.ts'],
   subscribers: [],
 });
