@@ -19,6 +19,8 @@ import { AppDataSource } from './data-source';
 import { ScheduleModule } from '@nestjs/schedule';
 import googleConfig from './config/google.config';
 import { AuthModule } from './modules/auth.module';
+import whapiConfig from './config/whapi.config';
+import authConfig from './config/auth.config';
 
 @Module({
   imports: [
@@ -26,7 +28,7 @@ import { AuthModule } from './modules/auth.module';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: `.env.${process.env}`,
-      load: [googleConfig],
+      load: [googleConfig, whapiConfig, authConfig],
     }),
     TypeOrmModule.forRoot(AppDataSource.options),
     TreatmentModule,
@@ -38,7 +40,6 @@ import { AuthModule } from './modules/auth.module';
     WhatsAppModule,
     GoogleCalendarModule,
     AuthModule,
-    UserModule,
     StatisticsModule,
     SchedulingModule,
   ],

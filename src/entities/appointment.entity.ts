@@ -25,7 +25,7 @@ export default class Appointment {
   })
   status: Status;
 
-  @Column({ nullable: false })
+  @Column({ type: 'timestamptz', nullable: false })
   scheduled_start: Date;
 
   @Column('decimal', { precision: 7, scale: 2, nullable: false })
