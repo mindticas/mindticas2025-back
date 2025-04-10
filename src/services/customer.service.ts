@@ -1,6 +1,6 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Injectable } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { SelectQueryBuilder, Repository, createQueryBuilder } from 'typeorm';
 import { Customer } from '../entities';
 import { CustomerRegisterDto, CustomerResponseDto, UserNameDto } from '../dtos';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -51,6 +51,22 @@ export default class CustomerService {
     this.customerMapping(customerResponse, customer);
 
     return customerResponse;
+  }
+
+  async filters(param: string): Promise<CustomerResponseDto[]> {
+    let customers = await this.get();
+
+    if (param === 'SERVICE_COUNT_ASC') {
+      customers = customers.sort((a, b) => a.id - b.id);
+    } else if (param === 'SERVICE_COUNT_DESC') {
+      customers = customers.sort((a, b) => b.id - a.id);
+    } else if (param === 'CUSTOMER_NAME_ASC') {
+      customers = customers.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (param === 'CUSTOMER_NAME_DESC') {
+      customers = customers.sort((a, b) => b.name.localeCompare(a.name));
+    }
+
+    return customers;
   }
 
   async createCustomer(createDto: CustomerRegisterDto): Promise<Customer> {
