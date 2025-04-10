@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ScheduleService } from './schedue.service';
+import { ScheduleService } from './schedule.service';
 import { Schedule } from '../entities';
 import { Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
