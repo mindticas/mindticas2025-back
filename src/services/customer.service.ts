@@ -12,7 +12,7 @@ export default class CustomerService {
     private readonly customerRepository: Repository<Customer>,
   ) {}
 
-  async get(): Promise<CustomerResponseDto[]> {
+  async get(param: string): Promise<CustomerResponseDto[]> {
     const customers = await this.customerRepository.find({
       relations: {
         appointments: {
@@ -33,6 +33,10 @@ export default class CustomerService {
       return customerResponse;
     });
 
+    if (param) {
+      return await this.filters(users, param);
+    }
+
     return users;
   }
 
@@ -51,6 +55,18 @@ export default class CustomerService {
     this.customerMapping(customerResponse, customer);
 
     return customerResponse;
+  }
+
+  async filters(customers, param: string): Promise<CustomerResponseDto[]> {
+    if (param === 'SERVICE_COUNT_ASC') {
+      return customers.sort((a, b) => a.id - b.id);
+    } else if (param === 'SERVICE_COUNT_DESC') {
+      return customers.sort((a, b) => b.id - a.id);
+    } else if (param === 'CUSTOMER_NAME_ASC') {
+      return customers.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (param === 'CUSTOMER_NAME_DESC') {
+      return customers.sort((a, b) => b.name.localeCompare(a.name));
+    }
   }
 
   async createCustomer(createDto: CustomerRegisterDto): Promise<Customer> {
