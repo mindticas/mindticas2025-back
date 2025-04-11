@@ -38,10 +38,13 @@ let server: any;
 let appInitialized = false;
 
 export default async function handler(event: any, context: any) {
+  
   if (!appInitialized) {
+    console.time('Nest cold start');
     const app = await createNestApp();
     server = serverlessExpress({ app });
     appInitialized = true;
+    console.timeEnd('Nest cold start');
   }
   
   return server(event, context);

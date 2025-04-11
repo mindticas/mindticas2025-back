@@ -1,4 +1,3 @@
-// src/db-init.ts
 import { AppDataSource } from './data-source';
 
 let initialized = false;
