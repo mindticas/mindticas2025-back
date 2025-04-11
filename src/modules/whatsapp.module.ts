@@ -3,10 +3,9 @@ import { HttpModule } from '@nestjs/axios';
 import { WhatsAppController } from '../controllers';
 import { WhatsAppService } from '../services';
 import AppointmentModule from './appointment.module';
-import { AuthModule } from './auth.module';
 
 @Module({
-  imports: [HttpModule, forwardRef(() => AppointmentModule), AuthModule],
+  imports: [HttpModule, forwardRef(() => AppointmentModule)],
   controllers: [WhatsAppController],
   providers: [WhatsAppService],
   exports: [WhatsAppService],

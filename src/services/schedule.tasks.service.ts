@@ -11,7 +11,7 @@ import { Appointment } from '../entities/index';
 import { Status } from '../enums/appointments.status.enum';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
-import { GoogleCalendarService, WhatsAppService } from './index';
+import { WhatsAppService } from './index';
 import * as messages from '../templates/whatsapp.messages.json';
 
 @Injectable()
@@ -24,8 +24,6 @@ export default class ScheduleTasksService implements OnModuleInit {
     private readonly schedulerRegistry: SchedulerRegistry,
     @Inject(forwardRef(() => WhatsAppService))
     private readonly whatsAppService: WhatsAppService,
-    @Inject(forwardRef(() => GoogleCalendarService))
-    private readonly googleCalendarService: GoogleCalendarService,
   ) {}
 
   async onModuleInit() {
@@ -52,12 +50,7 @@ export default class ScheduleTasksService implements OnModuleInit {
       );
 
       for (const appointment of pendingAppointments) {
-        if (
-          appointment.status !== Status.CANCELED &&
-          appointment.status !== Status.COMPLETED
-        ) {
-          this.scheduleReminderMessage(appointment);
-        }
+        this.scheduleReminderMessage(appointment);
       }
     } catch (error) {
       this.logger.error(`Error initializing reminders: ${error.message}`);
@@ -109,7 +102,7 @@ export default class ScheduleTasksService implements OnModuleInit {
       job.start();
 
       this.logger.log(
-        `Scheduled reminder, appointment: id(${appointment.id}) / ${reminderTime}`,
+        `Scheduled reminder, appointment: ${appointment.id}/${reminderTime}`,
       );
     } catch (error) {
       this.logger.error(`Error scheduling reminder: ${error.message}`);
@@ -140,9 +133,6 @@ export default class ScheduleTasksService implements OnModuleInit {
           ) {
             currentAppointment.status = Status.CANCELED;
             await this.appointmentRepository.save(currentAppointment);
-            if (currentAppointment.eventId) {
-              await this.googleCalendarService.deleteEvent(appointment.eventId);
-            }
             this.logger.log(
               `Appointment ${appointment.id} has been canceled due to no confirmation.`,
             );

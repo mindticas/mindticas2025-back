@@ -7,7 +7,6 @@ import WhatsAppModule from './whatsapp.module';
 import CustomerModule from './customer.module';
 import GoogleCalendarModule from './google.calendar.module';
 import { ScheduleTasksModule } from './index';
-import { AuthModule } from './auth.module';
 
 @Module({
   imports: [
@@ -16,7 +15,6 @@ import { AuthModule } from './auth.module';
     forwardRef(() => WhatsAppModule),
     forwardRef(() => ScheduleTasksModule),
     GoogleCalendarModule,
-    AuthModule,
   ],
   controllers: [AppointmentController],
   providers: [AppointmentService],

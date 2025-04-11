@@ -7,7 +7,7 @@ import {
   Patch,
   UseGuards,
 } from '@nestjs/common';
-import { ScheduleService } from '../services/schedule.service';
+import { ScheduleService } from '../services/schedue.service';
 import Schedule from '../entities/schedule.entity';
 import { UpdateScheduleDTO } from '../dtos';
 import { AuthGuard } from '../auth/auth.guard';

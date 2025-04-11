@@ -1,12 +1,17 @@
 import { HttpService } from '@nestjs/axios';
-import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  forwardRef,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 import AppointmentService from './appointment.service';
 import { formatMessage, generateParams } from '../utils/messageFormatter';
 import * as messagesTemplate from '../templates/whatsapp.messages.json';
 import { Status } from '../enums/appointments.status.enum';
-import { ConfigService } from '@nestjs/config';
-import { AppointmentResponseDto } from '../dtos';
 
 @Injectable()
 export default class WhatsAppService {
@@ -27,13 +32,12 @@ export default class WhatsAppService {
 
   constructor(
     private readonly httpService: HttpService,
-    private readonly configService: ConfigService,
     @Inject(forwardRef(() => AppointmentService))
     private readonly appointmentService: AppointmentService,
   ) {
-    this.apiUrl = this.configService.get('whapi.url') || '';
-    this.token = this.configService.get('whapi.token') || '';
-    this.channelId = this.configService.get('whapi.channelId') || '';
+    this.apiUrl = process.env.WHAAPI_URL || '';
+    this.token = process.env.WHAAPI_TOKEN || '';
+    this.channelId = process.env.WHAAPI_CHANNEL_ID || '';
     this.validateEnvVariables();
   }
 
@@ -56,6 +60,7 @@ export default class WhatsAppService {
       return response.status === 200;
     } catch (error) {
       this.logger.error(`Error sending simple message: ${error.message}`);
+      this.handleError(error);
     }
   }
 
@@ -90,103 +95,64 @@ export default class WhatsAppService {
   }
 
   async sentACK(messageId: string) {
-    try {
-      const response = await firstValueFrom(
-        this.httpService.put(
-          `${this.apiUrl}/messages/${messageId}`,
-          {},
-          {
-            headers: this.getHeaders(),
-          },
-        ),
-      );
-      return response;
-    } catch (error) {
-      this.logger.warn(`ACK(seen) NOT SENT: ${error.message}`);
-    }
+    const response = await firstValueFrom(
+      this.httpService.put(
+        `${this.apiUrl}/messages/${messageId}`,
+        {},
+        {
+          headers: this.getHeaders(),
+        },
+      ),
+    );
+    return response;
   }
 
-  async handleWebhook(payload: any): Promise<any> {
-    if (
-      !payload ||
-      !payload.messages ||
-      !Array.isArray(payload.messages) ||
-      payload.messages.length === 0
-    ) {
-      return;
-    }
-    const { id, type, from, reply, context } = payload.messages[0];
-
-    if (!id || !from) {
-      this.logger.warn('Missing required fields in message');
-      return;
-    }
-    let appointmentId;
-    const quotedBody = context?.quoted_content?.body;
-    if (quotedBody) {
-      const idMatch = quotedBody.match(/ID:?\s*(\d+)/);
-      if (idMatch && idMatch[1]) {
-        appointmentId = idMatch[1];
-      }
-    }
-
-    if (quotedBody && !appointmentId) {
-      return;
-    }
-
-    if (type !== 'reply' || !reply?.buttons_reply?.id) {
-      return;
-    }
-
-    await this.sentACK(id);
+  async handleWebhook(body: any): Promise<any> {
+    const { messages } = body;
+    if (!messages) return;
+    const { id, type, from, reply } = messages[0];
+    this.sentACK(id);
+    if (type !== 'reply' || !reply?.buttons_reply?.id) return;
     const numberRaw = from.slice(-10);
     const buttonId = reply.buttons_reply.id;
-
-    const appointment = await this.appointmentService.getById(appointmentId);
-    if (!appointment) {
-      this.logger.error(`Appointment with ID ${appointmentId} not found.`);
+    const lastAppointment =
+      await this.appointmentService.getLastAppointmentByPhone(numberRaw);
+    if (!lastAppointment) {
+      console.error('Appointment not found');
       return;
     }
-
     if (buttonId === 'ButtonsV3:1') {
-      return this.handleAppointmentStatusChange(
-        appointment,
-        numberRaw,
-        'confirmed',
+      await this.appointmentService.updateStatus(
+        lastAppointment.id,
+        Status.CONFIRMED,
       );
-    } else if (buttonId === 'ButtonsV3:2') {
-      return this.handleAppointmentStatusChange(
-        appointment,
-        numberRaw,
-        'canceled',
+      const params = generateParams(
+        lastAppointment.scheduled_start,
+        lastAppointment.treatments,
+        'appointment_confirmed',
       );
-    } else {
-      this.logger.error(`Unknown button ID: ${buttonId}`);
-      return;
+      const formattedMessage = formatMessage(
+        messagesTemplate['appointment_confirmed'],
+        params,
+      );
+      return this.sendMessage(numberRaw, formattedMessage);
     }
-  }
-
-  private async handleAppointmentStatusChange(
-    appointment: AppointmentResponseDto,
-    phoneNumber: string,
-    status: 'confirmed' | 'canceled',
-  ): Promise<any> {
-    const statusEnum =
-      status === 'confirmed' ? Status.CONFIRMED : Status.CANCELED;
-
-    await this.appointmentService.updateStatus(appointment.id, statusEnum);
-    const messageKey = `appointment_${status}`;
-    const params = generateParams(
-      appointment.scheduled_start,
-      appointment.treatments,
-      messageKey,
-      this.configService,
-    );
-    const formattedMessage = formatMessage(
-      messagesTemplate[messageKey],
-      params,
-    );
-    return this.sendMessage(phoneNumber, formattedMessage);
+    if (buttonId === 'ButtonsV3:2') {
+      await this.appointmentService.updateStatus(
+        lastAppointment.id,
+        Status.CANCELED,
+      );
+      const params = generateParams(
+        lastAppointment.scheduled_start,
+        lastAppointment.treatments,
+        'appointment_canceled',
+      );
+      const formattedMessage = formatMessage(
+        messagesTemplate['appointment_canceled'],
+        params,
+      );
+      return this.sendMessage(numberRaw, formattedMessage);
+    }
   }
 
   private getHeaders(): Record<string, string> {
@@ -194,6 +160,19 @@ export default class WhatsAppService {
       Authorization: `Bearer ${this.token}`,
       'Content-Type': 'application/json',
     };
+  }
+
+  private handleError(error: any): void {
+    if (error.response) {
+      console.error(`Error ${error.response.status}:`, error.response.data);
+      throw new HttpException(error.response.data, error.response.status);
+    } else {
+      console.error('Error inesperado:', error.message);
+      throw new HttpException(
+        'Error sending message',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   private validateEnvVariables(): void {
@@ -211,13 +190,7 @@ export default class WhatsAppService {
   async isConnected(): Promise<boolean> {
     try {
       const response = await firstValueFrom(
-        this.httpService.get(`${this.apiUrl}/health`, {
-          headers: this.getHeaders(),
-          params: {
-            wakeup: true,
-            channel_type: 'web',
-          },
-        }),
+        this.httpService.get(`${this.apiUrl}/health`),
       );
       return response.status === 200;
     } catch (error) {
