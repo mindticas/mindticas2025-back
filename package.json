@@ -44,7 +44,8 @@
       "pg": "^8.4.0",
       "reflect-metadata": "^0.1.13",
       "rxjs": "^7.2.0",
-      "typeorm": "0.3.20"
+      "typeorm": "0.3.20",
+      "aws-serverless-express": "^3.4.0"
    },
    "devDependencies": {
       "@nestjs/cli": "^10",
