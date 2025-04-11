@@ -35,10 +35,7 @@ export default class GoogleCalendarController {
       const refreshToken = await this.googleCalendarService.getRefreshToken(
         code,
       );
-      await this.googleTokenService.saveToken(ACCOUNT_ID, refreshToken);
-
-      await this.googleCalendarService.syncMissingEvents();
-
+      this.googleTokenService.saveToken(ACCOUNT_ID, refreshToken);
       return res.send(`
         <!DOCTYPE html>
         <html>
