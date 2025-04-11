@@ -5,12 +5,12 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import express from 'express';
-import { createServer, proxy } from 'aws-serverless-express';
+import serverlessExpress from '@vendia/serverless-express';
 
 const expressApp = express();
 
-async function createNestApp(expressInstance: express.Express) {
-  const app = await NestFactory.create(AppModule, new ExpressAdapter(expressInstance));
+async function createNestApp() {
+  const app = await NestFactory.create(AppModule, new ExpressAdapter(expressApp));
   const logger = new Logger('Bootstrap');
   const configService = app.get(ConfigService);
 
@@ -34,15 +34,15 @@ async function createNestApp(expressInstance: express.Express) {
     .catch((err) =>
       logger.error(`Database connection error: ${err.message}`, err.stack),
     );
-  return expressInstance;
+  return expressApp;
 }
 
 let server: any;
 
-export default async function handler(req: any, res: any) {
+export default async function handler(event: any, context: any) {
   if (!server) {
-    const expressInstance = await createNestApp(expressApp);
-    server = createServer(expressInstance);
+    const app = await createNestApp();
+    server = serverlessExpress({ app });
   }
-  return proxy(server, req, res);
+  return server(event, context);
 }

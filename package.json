@@ -46,7 +46,7 @@
       "rxjs": "^7.2.0",
       "typeorm": "0.3.20",
       "express": "^5.1.0",
-      "aws-serverless-express": "^3.4.0"
+      "@vendia/serverless-express": "^4.12.6"
    },
    "devDependencies": {
       "@nestjs/cli": "^10",
@@ -78,6 +78,9 @@
    },
    "resolutions": {
       "@types/passport": "0.4.7"
+   },
+   "overrides": {
+      "@codegenie/serverless-express": "0.0.0"
    },
    "jest": {
       "moduleFileExtensions": [
