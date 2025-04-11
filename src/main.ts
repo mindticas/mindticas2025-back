@@ -9,7 +9,8 @@ import serverlessExpress from '@vendia/serverless-express';
 
 const expressApp = express();
 
-async function createNestApp() {
+// Global initialization that doesn’t block handler
+async function initApp() {
   const app = await NestFactory.create(AppModule, new ExpressAdapter(expressApp));
   const logger = new Logger('Bootstrap');
   const configService = app.get(ConfigService);
@@ -29,20 +30,25 @@ async function createNestApp() {
   );
 
   await app.init();
-  await AppDataSource.initialize()
+
+  // DB connection (ensure this doesn't block the event loop)
+  AppDataSource.initialize()
     .then(() => logger.log('Database connected'))
-    .catch((err) =>
-      logger.error(`Database connection error: ${err.message}`, err.stack),
-    );
+    .catch((err) => logger.error(`Database connection error: ${err.message}`, err.stack));
+
   return expressApp;
 }
 
+// Async call to initialize Nest app and DB outside the handler
 let server: any;
+let appInitialized = false;
 
 export default async function handler(event: any, context: any) {
-  if (!server) {
-    const app = await createNestApp();
+  if (!appInitialized) {
+    const app = await initApp();
     server = serverlessExpress({ app });
+    appInitialized = true;
   }
+  
   return server(event, context);
 }
