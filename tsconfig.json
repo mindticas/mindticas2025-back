@@ -11,6 +11,8 @@
       "experimentalDecorators": true,
       "sourceMap": true,
       "resolveJsonModule": true,
+      "esModuleInterop": true,
+      "allowSyntheticDefaultImports": true
    },
    "include": ["src", "types/env.d.ts"],
 }
