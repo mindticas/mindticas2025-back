@@ -27,7 +27,7 @@ export default class TreatmentController {
   }
 
   @Post()
-  // @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard)
   createTreatment(@Body() dto: CreateTreatmentDTO) {
     return this.treatmentService.createTreatment(dto);
   }
