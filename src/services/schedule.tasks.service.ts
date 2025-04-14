@@ -43,12 +43,7 @@ export default class ScheduleTasksService implements OnModuleInit {
       );
 
       for (const appointment of pendingAppointments) {
-        if (
-          appointment.status !== Status.CANCELED &&
-          appointment.status !== Status.COMPLETED
-        ) {
-          this.scheduleReminderMessage(appointment);
-        }
+        this.scheduleReminderMessage(appointment);
       }
     } catch (error) {
       this.logger.error(`Error initializing reminders: ${error.message}`);

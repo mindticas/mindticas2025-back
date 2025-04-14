@@ -160,13 +160,13 @@ export default class WhatsAppService {
       return this.handleAppointmentStatusChange(
         appointment,
         numberRaw,
-        'confirmed',
+        Status.CONFIRMED,
       );
     } else if (buttonId === 'ButtonsV3:2') {
       return this.handleAppointmentStatusChange(
         appointment,
         numberRaw,
-        'canceled',
+        Status.CANCELED,
       );
     } else {
       this.logger.error(`Unknown button ID: ${buttonId}`);
@@ -177,12 +177,9 @@ export default class WhatsAppService {
   private async handleAppointmentStatusChange(
     appointment: AppointmentResponseDto,
     phoneNumber: string,
-    status: 'confirmed' | 'canceled',
+    status: Status,
   ): Promise<any> {
-    const statusEnum =
-      status === 'confirmed' ? Status.CONFIRMED : Status.CANCELED;
-
-    await this.appointmentService.updateStatus(appointment.id, statusEnum);
+    await this.appointmentService.updateStatus(appointment.id, status);
     const messageKey = `appointment_${status}`;
     const params = generateParams(
       appointment.scheduled_start,
