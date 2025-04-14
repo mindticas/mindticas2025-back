@@ -228,22 +228,4 @@ export default class WhatsAppService {
       this.logger.error('Invalid Channel Id');
     }
   }
-
-  async isConnected(): Promise<boolean> {
-    try {
-      const response = await firstValueFrom(
-        this.httpService.get(`${this.apiUrl}/health`, {
-          headers: this.getHeaders(),
-          params: {
-            wakeup: true,
-            channel_type: 'web',
-          },
-        }),
-      );
-      return response.status === 200;
-    } catch (error) {
-      this.logger.error('Unable to connect to WHAPI: ', error.message);
-      return false;
-    }
-  }
 }
