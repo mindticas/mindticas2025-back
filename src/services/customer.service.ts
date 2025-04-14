@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Customer } from '../entities';
 import { CustomerRegisterDto, CustomerResponseDto, UserNameDto } from '../dtos';
 import { InjectRepository } from '@nestjs/typeorm';
+import sorters from '../utils/customer.filter';
 
 @Injectable()
 export default class CustomerService {
@@ -34,7 +35,7 @@ export default class CustomerService {
     });
 
     if (param) {
-      return await this.filters(users, param);
+      return sorters[param](users);
     }
 
     return users;
@@ -55,18 +56,6 @@ export default class CustomerService {
     this.customerMapping(customerResponse, customer);
 
     return customerResponse;
-  }
-
-  async filters(customers, param: string): Promise<CustomerResponseDto[]> {
-    if (param === 'SERVICE_COUNT_ASC') {
-      return customers.sort((a, b) => a.id - b.id);
-    } else if (param === 'SERVICE_COUNT_DESC') {
-      return customers.sort((a, b) => b.id - a.id);
-    } else if (param === 'CUSTOMER_NAME_ASC') {
-      return customers.sort((a, b) => a.name.localeCompare(b.name));
-    } else if (param === 'CUSTOMER_NAME_DESC') {
-      return customers.sort((a, b) => b.name.localeCompare(a.name));
-    }
   }
 
   async createCustomer(createDto: CustomerRegisterDto): Promise<Customer> {
