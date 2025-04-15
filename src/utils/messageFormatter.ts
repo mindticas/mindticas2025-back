@@ -18,13 +18,13 @@ export function generateParams(
 ): Record<string, string> {
   const timeZone = configService.get('google.timeZone') || 'UTC';
 
-  const dt = DateTime.fromJSDate(scheduledStart)
+  const dateTime = DateTime.fromJSDate(scheduledStart)
     .setZone(timeZone)
     .setLocale('es');
 
-  const formattedDay = dt.toFormat('d');
-  const month = dt.toFormat('LLLL');
-  const formattedTime = dt.toFormat('hh:mm a');
+  const formattedDay = dateTime.toFormat('d');
+  const month = dateTime.toFormat('LLLL');
+  const formattedTime = dateTime.toFormat('hh:mm a');
 
   const params: Record<string, string> = {
     day: formattedDay.split(' ')[0] || 'Day',
