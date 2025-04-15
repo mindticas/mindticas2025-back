@@ -33,7 +33,6 @@ export default class UserSeed {
         continue;
       }
       try {
-        console.log(process.env.ADMIN_PASSWORD);
         const hashedPassword = await bcryptjs.hash(user.password, 10);
         const role = await this.roleRepository.findOneBy({ id: user.role_id });
         const newUser = new User();

@@ -69,7 +69,6 @@ export default class TreatmentSeed {
         name,
       });
       if (existingTreatment) {
-        console.log(`\u{26A0} Treatment '${name}' already seeded.`);
         continue;
       }
 
@@ -81,7 +80,6 @@ export default class TreatmentSeed {
           description,
         });
         await this.treatmentRepository.save(treatmentEntity);
-        console.log(`\u{2705} Treatment '${name}' seeded successfully`);
       } catch (error) {
         console.error('Error seeding treatment:', error.message);
       }

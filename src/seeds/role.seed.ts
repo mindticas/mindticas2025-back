@@ -23,7 +23,6 @@ export default class RoleSeed {
       try {
         const roleEntity = this.roleRepository.create({ name });
         await this.roleRepository.save(roleEntity);
-        console.log(`\u{2705} ${name} role seeded successfully`);
       } catch (error) {
         console.error('Error seeding role:', error.message);
       }
