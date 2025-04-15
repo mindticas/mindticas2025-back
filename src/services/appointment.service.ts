@@ -29,6 +29,7 @@ import {
 } from '../utils/appointment.validations';
 import ScheduleTasksService from './schedule.tasks.service';
 import { DateTime } from 'luxon';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export default class AppointmentService {
@@ -47,6 +48,7 @@ export default class AppointmentService {
     @Inject(forwardRef(() => ScheduleTasksService))
     private readonly scheduleTasksService: ScheduleTasksService,
     private readonly googleCalendarService: GoogleCalendarService,
+    private readonly configService: ConfigService,
   ) {}
 
   async get(): Promise<AppointmentResponseDto[]> {
@@ -78,20 +80,12 @@ export default class AppointmentService {
 
   async getById(id: number): Promise<AppointmentResponseDto> {
     const appointment = await this.searchForId(id);
-    const originalDate = DateTime.fromJSDate(appointment.scheduled_start, {
-      zone: 'utc',
-    });
-
-    const localDate = originalDate.setZone('local');
-    const offsetMinutes = localDate.offset;
-    const adjustedDate = originalDate.minus({ minutes: -offsetMinutes });
 
     const userNameDto = new UserNameDto();
     userNameDto.name = appointment.user.name;
 
     return {
       ...appointment,
-      scheduled_start: adjustedDate.toJSDate(),
       user: userNameDto,
     };
   }
@@ -134,6 +128,7 @@ export default class AppointmentService {
         customer.phone,
         scheduledStart,
         treatments,
+        savedAppointment.id,
       );
 
       this.scheduleTasksService.scheduleCancellation(savedAppointment);
@@ -155,6 +150,14 @@ export default class AppointmentService {
     updateDto: AppointmentUpdateDto,
   ): Promise<Appointment> {
     const appointment = await this.searchForId(id);
+
+    if (
+      updateDto.status &&
+      updateDto.status === 'CANCELLED' &&
+      appointment.eventId
+    ) {
+      await this.googleCalendarService.deleteEvent(appointment.eventId);
+    }
 
     if (updateDto.scheduled_start) {
       const scheduledStart = new Date(updateDto.scheduled_start);
@@ -263,6 +266,9 @@ export default class AppointmentService {
         `Appointment with ID: ${appointmentId} not found`,
       );
     }
+    if (status === Status.CANCELED) {
+      this.googleCalendarService.deleteEvent(appointment.eventId);
+    }
     appointment.status = status;
     await this.appointmentRepository.save(appointment);
     return appointment;
@@ -315,11 +321,14 @@ export default class AppointmentService {
     phone: string,
     scheduledStart: Date,
     treatments: Treatment[],
+    appointmentId: number,
   ) {
     const params = generateParams(
       scheduledStart,
       treatments,
       'appointment_confirmation',
+      this.configService,
+      appointmentId,
     );
     const messageTemplate = messages['appointment_confirmation'];
     const formattedMessage = formatMessage(messageTemplate, params);

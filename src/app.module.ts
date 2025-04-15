@@ -38,7 +38,6 @@ import { AuthModule } from './modules/auth.module';
     WhatsAppModule,
     GoogleCalendarModule,
     AuthModule,
-    UserModule,
     StatisticsModule,
     SchedulingModule,
   ],
