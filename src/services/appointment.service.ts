@@ -118,7 +118,9 @@ export default class AppointmentService {
       treatments,
     });
     const eventId = await this.googleCalendarService.createEvent(appointment);
-    appointment.eventId = eventId;
+    if (eventId) {
+      appointment.eventId = eventId;
+    }
     let savedAppointment;
 
     try {
