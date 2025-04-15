@@ -12,19 +12,19 @@ export default class TreatmentSeed {
 
   treatments = [
     {
-      name: 'Corte',
+      name: 'Corte.',
       price: 150.00,
       duration: 60,
       description: 'Corte básico de cabello.',
     },
     {
-      name: 'Corte y barba',
+      name: 'Corte y barba.',
       price: 250.00,
       duration: 60,
       description: 'Corte básico de cabello y corte de barba.',
     },
     {
-      name: 'Recorte y delineado de barba',
+      name: 'Recorte y delineado de barba.',
       price: 150.00,
       duration: 60,
       description: 'Recorte y delineado de barba.',
@@ -36,13 +36,13 @@ export default class TreatmentSeed {
       description: 'Recorte básico.',
     },
     {
-      name: 'Ceja',
+      name: 'Ceja.',
       price: 50.00,
       duration: 60,
       description: 'Limpieza de ceja.',
     },
     {
-      name: 'Exfolación',
+      name: 'Exfolación.',
       price: 130.00,
       duration: 60,
       description: 'Exfolación.',
