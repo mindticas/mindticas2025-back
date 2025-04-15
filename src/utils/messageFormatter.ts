@@ -1,4 +1,5 @@
 import { ConfigService } from '@nestjs/config';
+import { DateTime } from 'luxon';
 
 export function formatMessage(
   template: string,
@@ -11,30 +12,19 @@ export function generateParams(
   scheduledStart: Date,
   treatments: any[] = [],
   type: string,
-  confingService: ConfigService,
+  configService: ConfigService,
   appointmentId?: number,
   customer?: { name?: string; phone?: string },
 ): Record<string, string> {
-  const dateOptions: Intl.DateTimeFormatOptions = {
-    day: 'numeric',
-    month: 'long',
-    timeZone: confingService.get('google.timeZone'),
-  };
-  const timeOptions: Intl.DateTimeFormatOptions = {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
-    timeZone: confingService.get('google.timeZone'),
-  };
+  const timeZone = configService.get('google.timeZone') || 'UTC';
 
-  const correctedDate = new Date(scheduledStart);
-  const formattedDay =
-    correctedDate.toLocaleDateString('es-ES', dateOptions) || 'Undefined day';
-  const month =
-    correctedDate.toLocaleString('es-ES', { month: 'long' }) ||
-    'Undefined month';
-  const formattedTime =
-    correctedDate.toLocaleTimeString('es-ES', timeOptions) || 'Undefined hour';
+  const dateTime = DateTime.fromJSDate(scheduledStart)
+    .setZone(timeZone)
+    .setLocale('es');
+
+  const formattedDay = dateTime.toFormat('d');
+  const month = dateTime.toFormat('LLLL');
+  const formattedTime = dateTime.toFormat('hh:mm a');
 
   const params: Record<string, string> = {
     day: formattedDay.split(' ')[0] || 'Day',
@@ -53,7 +43,7 @@ export function generateParams(
   }
 
   if (type === 'appointment_canceled') {
-    params['url'] = confingService.get('google.timeZone');
+    params['url'] = configService.get('google.timeZone');
   }
 
   return params;
