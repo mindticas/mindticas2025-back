@@ -1,4 +1,10 @@
-export function formatMessage(template: string, params: Record<string, string>): string {
+import { ConfigService } from '@nestjs/config';
+import { DateTime } from 'luxon';
+
+export function formatMessage(
+  template: string,
+  params: Record<string, string>,
+): string {
   return template.replace(/\{(\w+)\}/g, (_, key) => params[key] || `{${key}}`);
 }
 
@@ -6,32 +12,38 @@ export function generateParams(
   scheduledStart: Date,
   treatments: any[] = [],
   type: string,
-  customer?: { name?: string; phone?: string }
+  configService: ConfigService,
+  appointmentId?: number,
+  customer?: { name?: string; phone?: string },
 ): Record<string, string> {
-  const dateOptions: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long' };
-  const timeOptions: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit', hour12: true };
+  const timeZone = configService.get('google.timeZone') || 'UTC';
 
-  const correctedDate = new Date(scheduledStart);
-  correctedDate.setHours(correctedDate.getHours() + 6); //6 hours difference
+  const dateTime = DateTime.fromJSDate(scheduledStart)
+    .setZone(timeZone)
+    .setLocale('es');
 
-  const formattedDay = correctedDate.toLocaleDateString('es-ES', dateOptions) || 'Undefined day';
-  const month = correctedDate.toLocaleString('es-ES', { month: 'long' }) || 'Undefined month';
-  const formattedTime = correctedDate.toLocaleTimeString('es-ES', timeOptions) || 'Undefined hour';
+  const formattedDay = dateTime.toFormat('d');
+  const month = dateTime.toFormat('LLLL');
+  const formattedTime = dateTime.toFormat('hh:mm a');
 
   const params: Record<string, string> = {
     day: formattedDay.split(' ')[0] || 'Day',
     month: month.charAt(0).toUpperCase() + month.slice(1),
     hour: formattedTime,
-    service: treatments.length > 0 ? treatments.map(t => t.name).join(', ') : 'Undefined service',
+    service:
+      treatments.length > 0
+        ? treatments.map((t) => t.name).join(', ')
+        : 'Undefined service',
+    id: appointmentId ? appointmentId.toString() : 'undefined',
   };
 
-  if (type === "appointment_reminder" || type === "appointment_canceled") {
-    params["name"] = customer?.name || 'Customer';
-    params["phone"] = customer?.phone || 'Unavailable phone';
+  if (type === 'appointment_reminder' || type === 'appointment_canceled') {
+    params['name'] = customer?.name || 'Customer';
+    params['phone'] = customer?.phone || 'Unavailable phone';
   }
 
-  if (type === "appointment_canceled") {
-    params["url"] = process.env.URL_WEB; //URL development
+  if (type === 'appointment_canceled') {
+    params['url'] = configService.get('google.timeZone');
   }
 
   return params;

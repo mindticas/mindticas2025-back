@@ -12,6 +12,7 @@ import CustomerService from '../services/customer.service';
 import { Status } from '../enums/appointments.status.enum';
 import WhatsAppService from '../services/whatsapp.service';
 import { SchedulerRegistry } from '@nestjs/schedule';
+import { GoogleCalendarService } from './index';
 
 const mockAppointmentRepository = {
   find: jest.fn(),
@@ -41,6 +42,12 @@ const mockCustomerService = {
 const mockWhatsAppService = {
   sendMessage: jest.fn(),
   sendInteractiveMessage: jest.fn(),
+};
+
+const mockGoogleCalendarService = {
+  createEvent: jest.fn(),
+  updateEvent: jest.fn(),
+  deleteEvent: jest.fn(),
 };
 
 const mockUser = {
@@ -126,6 +133,7 @@ describe('AppointmentService', () => {
           provide: SchedulerRegistry,
           useValue: {},
         },
+        { provide: GoogleCalendarService, useValue: mockGoogleCalendarService },
       ],
     }).compile();
 
@@ -184,7 +192,7 @@ describe('AppointmentService', () => {
       );
     });
 
-    it('should throw BadRequestException if an appointment already exists at the same time', async () => {
+    it('Should throw BadRequestException if appt exists', async () => {
       mockUserRepository.find.mockResolvedValue([mockUser]);
       mockTreatmentRepository.find.mockResolvedValue(mockTreatments);
       mockAppointmentRepository.findOne.mockResolvedValue(mockAppointment);
@@ -211,7 +219,7 @@ describe('AppointmentService', () => {
       expect(mockCustomerService.createCustomer).toHaveBeenCalled();
     });
 
-    it('should throw InternalServerErrorException on save failure', async () => {
+    it('Should throw InternalServerErrorException on save', async () => {
       mockUserRepository.find.mockResolvedValue([mockUser]);
       mockTreatmentRepository.find.mockResolvedValue(mockTreatments);
       mockAppointmentRepository.findOne.mockResolvedValue(null);

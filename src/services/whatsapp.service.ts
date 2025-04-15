@@ -12,6 +12,8 @@ import AppointmentService from './appointment.service';
 import { formatMessage, generateParams } from '../utils/messageFormatter';
 import * as messagesTemplate from '../templates/whatsapp.messages.json';
 import { Status } from '../enums/appointments.status.enum';
+import { AppointmentResponseDto } from '../dtos';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export default class WhatsAppService {
@@ -32,6 +34,7 @@ export default class WhatsAppService {
 
   constructor(
     private readonly httpService: HttpService,
+    private readonly configService: ConfigService,
     @Inject(forwardRef(() => AppointmentService))
     private readonly appointmentService: AppointmentService,
   ) {
@@ -41,7 +44,7 @@ export default class WhatsAppService {
     this.validateEnvVariables();
   }
 
-  async sendMessage(phone: string, message: string): Promise<any> {
+  async sendMessage(phone: string, message: string): Promise<boolean> {
     try {
       const phoneF = `521${phone}@s.whatsapp.net`;
       const response = await firstValueFrom(
@@ -57,9 +60,9 @@ export default class WhatsAppService {
           },
         ),
       );
-      return response.data;
+      return response.status === 200;
     } catch (error) {
-      this.logger.error(`Error al enviar el mensaje: ${error.message}`);
+      this.logger.error(`Error sending simple message: ${error.message}`);
       this.handleError(error);
     }
   }
@@ -68,7 +71,7 @@ export default class WhatsAppService {
     phone: string,
     message: string,
     buttons: { id: string; type: string; title: string }[],
-  ): Promise<any> {
+  ): Promise<boolean> {
     try {
       const formattedPhone = `521${phone}@s.whatsapp.net`;
       const data = {
@@ -87,79 +90,108 @@ export default class WhatsAppService {
           headers: this.getHeaders(),
         }),
       );
-      this.logger.log(`Enviando payload: ${JSON.stringify(data)}`);
-      return response.data;
+      return response.status === 200;
     } catch (error) {
-      console.error(
-        'Error sending interactive message:',
-        error.response?.data || error.message,
-      );
-      throw new HttpException(
-        error.response?.data || 'Error sending interactive message:',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      this.logger.error(`Error sending interactive message: ${error.message}`);
+      return false;
     }
   }
 
   async sentACK(messageId: string) {
-    const response = await firstValueFrom(
-      this.httpService.put(
-        `${this.apiUrl}/messages/${messageId}`,
-        {},
-        {
-          headers: this.getHeaders(),
-        },
-      ),
-    );
-    return response;
+    try {
+      const response = await firstValueFrom(
+        this.httpService.put(
+          `${this.apiUrl}/messages/${messageId}`,
+          {},
+          {
+            headers: this.getHeaders(),
+          },
+        ),
+      );
+      return response;
+    } catch (error) {
+      this.logger.warn(`ACK(seen) NOT SENT: ${error.message}`);
+    }
   }
 
-  async handleWebhook(body: any): Promise<any> {
-    const { messages } = body;
-    if (!messages) return;
-    const { id, type, from, reply } = messages[0];
-    this.sentACK(id);
-    if (type !== 'reply' || !reply?.buttons_reply?.id) return;
-    const numberRaw = from.slice(-10);
-    const buttonId = reply.buttons_reply.id;
-    const lastAppointment =
-      await this.appointmentService.getLastAppointmentByPhone(numberRaw);
-    if (!lastAppointment) {
-      console.error('Appointment not found');
+  async handleWebhook(payload: any): Promise<any> {
+    if (
+      !payload ||
+      !payload.messages ||
+      !Array.isArray(payload.messages) ||
+      payload.messages.length === 0
+    ) {
       return;
     }
+    const { id, type, from, reply, context } = payload.messages[0];
+
+    if (!id || !from) {
+      this.logger.warn('Missing required fields in message');
+      return;
+    }
+    let appointmentId;
+    const quotedBody = context?.quoted_content?.body;
+    if (quotedBody) {
+      const idMatch = quotedBody.match(/ID:?\s*(\d+)/);
+      if (idMatch && idMatch[1]) {
+        appointmentId = idMatch[1];
+      }
+    }
+
+    if (quotedBody && !appointmentId) {
+      return;
+    }
+
+    if (type !== 'reply' || !reply?.buttons_reply?.id) {
+      return;
+    }
+
+    await this.sentACK(id);
+    const numberRaw = from.slice(-10);
+    const buttonId = reply.buttons_reply.id;
+
+    const appointment = await this.appointmentService.getById(appointmentId);
+    if (!appointment) {
+      this.logger.error(`Appointment with ID ${appointmentId} not found.`);
+      return;
+    }
+
     if (buttonId === 'ButtonsV3:1') {
-      await this.appointmentService.updateStatus(
-        lastAppointment.id,
+      return this.handleAppointmentStatusChange(
+        appointment,
+        numberRaw,
         Status.CONFIRMED,
       );
-      const params = generateParams(
-        lastAppointment.scheduled_start,
-        lastAppointment.treatments,
-        'appointment_confirmed',
-      );
-      const formattedMessage = formatMessage(
-        messagesTemplate['appointment_confirmed'],
-        params,
-      );
-      return this.sendMessage(numberRaw, formattedMessage);
-    }
-    if (buttonId === 'ButtonsV3:2') {
-      await this.appointmentService.updateStatus(
-        lastAppointment.id,
+    } else if (buttonId === 'ButtonsV3:2') {
+      return this.handleAppointmentStatusChange(
+        appointment,
+        numberRaw,
         Status.CANCELED,
       );
-      const params = generateParams(
-        lastAppointment.scheduled_start,
-        lastAppointment.treatments,
-        'appointment_canceled',
-      );
-      const formattedMessage = formatMessage(
-        messagesTemplate['appointment_canceled'],
-        params,
-      );
-      return this.sendMessage(numberRaw, formattedMessage);
+    } else {
+      this.logger.error(`Unknown button ID: ${buttonId}`);
+      return;
     }
+  }
+
+  private async handleAppointmentStatusChange(
+    appointment: AppointmentResponseDto,
+    phoneNumber: string,
+    status: Status,
+  ): Promise<any> {
+    await this.appointmentService.updateStatus(appointment.id, status);
+    const messageKey = `appointment_${status}`;
+    const params = generateParams(
+      appointment.scheduled_start,
+      appointment.treatments,
+      messageKey,
+      this.configService,
+    );
+    const formattedMessage = formatMessage(
+      messagesTemplate[messageKey],
+      params,
+    );
+    return this.sendMessage(phoneNumber, formattedMessage);
   }
 
   private getHeaders(): Record<string, string> {
