@@ -116,7 +116,6 @@ export default class ScheduleSeed {
           open_hours,
         });
         await this.scheduleRepository.save(scheduleEntity);
-        console.log(`\u{2705} ${day} schedule seeded successfully`);
       } catch (error) {
         console.error('Error seeding schedule:', error.message);
       }
