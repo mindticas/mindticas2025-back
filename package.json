@@ -6,7 +6,7 @@
    "private": true,
    "license": "UNLICENSED",
    "scripts": {
-      "build": "yarn run seed:run && nest build",
+      "build": "nest build",
       "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
       "start": "ts-node src/index.ts",
       "start:dev": "nest start --watch",
