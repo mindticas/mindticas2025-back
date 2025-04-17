@@ -11,3 +11,6 @@ export { default as AppointmentResponseDto } from './appointment.get.response.dt
 export { default as AppointmentDto } from './appointment.dto';
 export { default as CustomerDto } from './customer.dto';
 export { default as CustomerResponseDto } from './customer.get.response.dto';
+export { default as UserResponseDto } from './user.get.response.dto';
+export { default as UserCreateDto } from './user.create.dto';
+export { default as UserUpdateDto } from './user.update.dto';
