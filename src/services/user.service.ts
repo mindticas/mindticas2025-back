@@ -34,10 +34,12 @@ export class UserService {
       return userResponse;
     });
 
-    if (param && userFilters[param]) {
-      return userFilters[param](users);
-    } else if (param) {
-      throw new BadRequestException(`Parámetro de filtro inválido: ${param}`);
+    if (param) {
+      const filterKey = param.toUpperCase();
+      if (!Object.keys(userFilters).includes(filterKey)) {
+        throw new BadRequestException(`Parametro Inválido: ${param}`);
+      }
+      return userFilters[filterKey](userResponse);
     }
 
     return userResponse;
@@ -56,9 +58,8 @@ export class UserService {
       throw new Error('Usuario existente, usa diferentes credenciales para crear uno.');
     }
     const user = this.userRepository.create(createDto);
-    const hashedPassword = await bcryptjs.hash(createDto.password, 10);
-    user.password = hashedPassword;
     try {
+      const user = this.userRepository.create({ ...createDto, password: bcryptjs.hashSync(createDto.password, 10) });
       return await this.userRepository.save(user);
     } catch (error) {
       throw new InternalServerErrorException(`Error al crear usuario`);
