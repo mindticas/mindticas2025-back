@@ -23,32 +23,40 @@ export class UserService {
     });
 
     const userResponse = users.map((user) => {
-      return {
-        ...user,
-      };
+      const userResponse = new UserResponseDto();
+      userResponse.id = user.id;
+      userResponse.name = user.name;
+      userResponse.phone = user.phone;
+      userResponse.email = user.email;
+      userResponse.role = user.role;
+      userResponse.appointments = user.appointments;
+
+      return userResponse;
     });
 
-    if (param) {
-      return userFilters[param](userResponse);
+    if (param && userFilters[param]) {
+      return userFilters[param](users);
+    } else if (param) {
+      throw new BadRequestException(`Parámetro de filtro inválido: ${param}`);
     }
 
     return userResponse;
   }
 
-  async create(crateDto: UserCreateDto): Promise<User> {
+  async create(createDto: UserCreateDto): Promise<User> {
     const existingUser = await this.userRepository.findOne({
       where: {
-        email: crateDto.email,
-        phone: crateDto.phone,
-        name: crateDto.name,
+        email: createDto.email,
+        phone: createDto.phone,
+        name: createDto.name,
       },
     });
 
     if (existingUser) {
-      throw new Error('Usuario existente, usa difentes credenciales para crear uno.');
+      throw new Error('Usuario existente, usa diferentes credenciales para crear uno.');
     }
-    const user = this.userRepository.create(crateDto);
-    const hashedPassword = await bcryptjs.hash(user.password, 10);
+    const user = this.userRepository.create(createDto);
+    const hashedPassword = await bcryptjs.hash(createDto.password, 10);
     user.password = hashedPassword;
     try {
       return await this.userRepository.save(user);
@@ -59,12 +67,11 @@ export class UserService {
 
   async update(id: number, dto: UserUpdateDto): Promise<User> {
     const user = await this.searchFor(id);
-    console.log(user);
     Object.assign(user, dto);
     try {
       return this.userRepository.save(user);
     } catch (error) {
-      throw new BadRequestException('Erro al actualizar el usuario');
+      throw new BadRequestException('Error al actualizar el usuario');
     }
   }
 
