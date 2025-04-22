@@ -4,7 +4,6 @@ import { Role } from '../entities';
 
 export default class UserResponseDto {
   @IsNumber()
-  @MaxLength(50)
   @IsNotEmpty()
   id: number;
 
@@ -22,11 +21,6 @@ export default class UserResponseDto {
   @MaxLength(50)
   @IsNotEmpty()
   email: string;
-
-  @IsString()
-  @MaxLength(30)
-  @IsNotEmpty()
-  password: string;
 
   @IsNotEmpty()
   role: Role;
