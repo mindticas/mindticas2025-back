@@ -12,10 +12,10 @@ export const customerFilters = {
       (a, b) => b.appointments.length - a.appointments.length,
     );
   },
-  CUSTOMER_NAME_ASC: (customers: Customer[]): Customer[] => {
+  NAME_ASC: (customers: Customer[]): Customer[] => {
     return customers.sort((a, b) => a.name.localeCompare(b.name));
   },
-  CUSTOMER_NAME_DESC: (customers: Customer[]): Customer[] => {
+  NAME_DESC: (customers: Customer[]): Customer[] => {
     return customers.sort((a, b) => b.name.localeCompare(a.name));
   },
 };
@@ -27,10 +27,10 @@ export const userFilters = {
   SERVICE_COUNT_DESC: (users: User[]): User[] => {
     return users.sort((a, b) => b.appointments.length - a.appointments.length);
   },
-  USER_NAME_ASC: (users: User[]): User[] => {
+  NAME_ASC: (users: User[]): User[] => {
     return users.sort((a, b) => a.name.localeCompare(b.name));
   },
-  USER_NAME_DESC: (users: User[]): User[] => {
+  NAME_DESC: (users: User[]): User[] => {
     return users.sort((a, b) => b.name.localeCompare(a.name));
   },
 };
