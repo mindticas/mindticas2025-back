@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { User } from '../entities';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -22,17 +23,7 @@ export class UserService {
       relations: { role: true, appointments: true },
     });
 
-    const userResponse = users.map((user) => {
-      const userResponse = new UserResponseDto();
-      userResponse.id = user.id;
-      userResponse.name = user.name;
-      userResponse.phone = user.phone;
-      userResponse.email = user.email;
-      userResponse.role = user.role;
-      userResponse.appointments = user.appointments;
-
-      return userResponse;
-    });
+    const userResponse = users.map((user) => this.mapToUserResponse(user));
 
     if (param) {
       const filterKey = param.toUpperCase();
@@ -45,6 +36,16 @@ export class UserService {
     return userResponse;
   }
 
+  async getById(id: number): Promise<UserResponseDto> {
+    const user = await this.searchFor(id);
+
+    if (!user) {
+      throw new NotFoundException(`Cliente con ID ${id} no encontrado`);
+    }
+
+    return this.mapToUserResponse(user);
+  }
+
   async create(createDto: UserCreateDto): Promise<User> {
     const existingUser = await this.userRepository.findOne({
       where: {
@@ -55,11 +56,16 @@ export class UserService {
     });
 
     if (existingUser) {
-      throw new Error('Usuario existente, usa diferentes credenciales para crear uno.');
+      throw new Error(
+        'Usuario existente, usa diferentes credenciales para crear uno.',
+      );
     }
     const user = this.userRepository.create(createDto);
     try {
-      const user = this.userRepository.create({ ...createDto, password: bcryptjs.hashSync(createDto.password, 10) });
+      const user = this.userRepository.create({
+        ...createDto,
+        password: bcryptjs.hashSync(createDto.password, 10),
+      });
       return await this.userRepository.save(user);
     } catch (error) {
       throw new InternalServerErrorException(`Error al crear usuario`);
@@ -98,7 +104,7 @@ export class UserService {
   async searchFor(id: number): Promise<User> {
     const user = await this.userRepository.findOne({
       where: { id: id },
-      relations: { role: true },
+      relations: { role: true, appointments: true },
     });
 
     if (!user) {
@@ -106,5 +112,16 @@ export class UserService {
     }
 
     return user;
+  }
+
+  private mapToUserResponse(user: User): UserResponseDto {
+    const userResponse = new UserResponseDto();
+    userResponse.id = user.id;
+    userResponse.name = user.name;
+    userResponse.phone = user.phone;
+    userResponse.email = user.email;
+    userResponse.role = user.role;
+    userResponse.appointments = user.appointments;
+    return userResponse;
   }
 }
