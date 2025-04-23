@@ -108,6 +108,7 @@ export class UserService {
         role: true,
         appointments: {
           treatments: true,
+          customer: true,
         },
       },
     });
