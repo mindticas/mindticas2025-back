@@ -104,7 +104,12 @@ export class UserService {
   async searchFor(id: number): Promise<User> {
     const user = await this.userRepository.findOne({
       where: { id: id },
-      relations: { role: true, appointments: true },
+      relations: {
+        role: true,
+        appointments: {
+          treatments: true,
+        },
+      },
     });
 
     if (!user) {
