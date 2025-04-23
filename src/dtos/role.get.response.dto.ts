@@ -1,5 +1,4 @@
-import { IsNotEmpty, IsString, IsOptional, IsNumber } from 'class-validator';
-import { User } from '../entities';
+import { IsNotEmpty, IsString, IsNumber } from 'class-validator';
 
 export default class RoleResponseDto {
   @IsNotEmpty()
@@ -9,7 +8,4 @@ export default class RoleResponseDto {
   @IsNotEmpty()
   @IsString()
   name: string;
-
-  @IsOptional()
-  users?: User[];
 }
