@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Customer } from '../entities';
 import { CustomerRegisterDto, CustomerResponseDto, UserNameDto } from '../dtos';
 import { InjectRepository } from '@nestjs/typeorm';
-import sorters from '../utils/customer.filter';
+import { customerFilters } from '../utils/filter';
 
 @Injectable()
 export default class CustomerService {
@@ -35,7 +35,7 @@ export default class CustomerService {
     });
 
     if (param) {
-      return sorters[param](users);
+      return customerFilters[param](users);
     }
 
     return users;

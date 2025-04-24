@@ -20,6 +20,7 @@ export function validateAppointment(start: Date): void {
   const today = new Date();
   const maxDate = new Date(today);
   maxDate.setDate(today.getDate() + 7);
+  maxDate.setHours(maxDate.getHours() + 7);
 
   if (start > maxDate || start < today) {
     throw new BadRequestException(
