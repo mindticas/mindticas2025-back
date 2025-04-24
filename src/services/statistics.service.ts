@@ -5,15 +5,18 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
-import { Appointment } from '../entities/index';
+import { Appointment, Treatment } from '../entities/index';
 import { ResponseStatisticsDto } from '../dtos';
 import { plainToClass } from 'class-transformer';
+import * as ExcelJS from 'exceljs';
 
 @Injectable()
 export default class StatisticsService {
   constructor(
     @InjectRepository(Appointment)
     private readonly appointmentRepository: Repository<Appointment>,
+    @InjectRepository(Treatment)
+    private readonly treatmentRepository: Repository<Treatment>,
   ) {}
 
   async getStatistics(startDate: string, endDate: string, treatment?: string) {
@@ -157,5 +160,91 @@ export default class StatisticsService {
         'Error al calcular las citas canceladas.',
       );
     }
+  }
+
+  async exportStatisticsToExcel(
+    startDate: string,
+    endDate: string,
+  ): Promise<Buffer> {
+    const treatmentNames = await this.getAllTreatments();
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Estadísticas');
+
+    worksheet.columns = [
+      { header: 'Tratamiento', key: 'treatment', width: 30 },
+      { header: 'Total Ingresos', key: 'totalEarnings', width: 20 },
+      { header: 'Total Servicios', key: 'totalServices', width: 20 },
+      {
+        header: 'Citas Completadas',
+        key: 'totalCompletedAppointments',
+        width: 20,
+      },
+      {
+        header: 'Citas Canceladas',
+        key: 'totalCanceledAppointments',
+        width: 20,
+      },
+    ];
+    const headerRow = worksheet.getRow(1);
+    headerRow.getCell('treatment').fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFD9D9D9' }, // Gris claro
+    };
+    headerRow.getCell('totalEarnings').fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF70AD47' }, // Verde
+    };
+    headerRow.getCell('totalServices').fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFFFFF99' }, // Amarillo
+    };
+    headerRow.getCell('totalCompletedAppointments').fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF9BC2E6' }, // Azul claro
+    };
+    headerRow.getCell('totalCanceledAppointments').fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFFF9999' }, // Rojo suave
+    };
+
+    for (const treatment of treatmentNames) {
+      const stats = await this.getStatistics(startDate, endDate, treatment);
+
+      worksheet.addRow({
+        treatment,
+        totalEarnings: stats.totalEarnings,
+        totalServices: stats.totalServices,
+        totalCompletedAppointments: stats.totalCompletedAppointments,
+        totalCanceledAppointments: stats.totalCanceledAppointments,
+      });
+    }
+
+    worksheet.addRow({});
+    const totalStats = await this.getStatistics(startDate, endDate);
+
+    worksheet.addRow({
+      treatment: 'Total',
+      totalEarnings: totalStats.totalEarnings,
+      totalServices: totalStats.totalServices,
+      totalCompletedAppointments: totalStats.totalCompletedAppointments,
+      totalCanceledAppointments: totalStats.totalCanceledAppointments,
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    return Buffer.from(buffer);
+  }
+
+  private async getAllTreatments(): Promise<string[]> {
+    const treatments = await this.treatmentRepository.find({
+      select: ['name'],
+      order: { name: 'ASC' },
+    });
+
+    return treatments.map((treatment) => treatment.name);
   }
 }
