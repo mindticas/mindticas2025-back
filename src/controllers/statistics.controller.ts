@@ -36,7 +36,7 @@ export default class StatisticsController {
     );
     res.setHeader(
       'Content-Disposition',
-      'attachment; filename=estadisticas.xlsx',
+      `attachment; filename=(${startDate} - ${endDate})-Reporte-Elegangsters.xlsx`,
     );
 
     res.end(buffer);
