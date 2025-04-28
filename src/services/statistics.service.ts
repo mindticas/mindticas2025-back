@@ -195,27 +195,27 @@ export default class StatisticsService {
     headerRow.getCell('treatment').fill = {
       type: 'pattern',
       pattern: 'solid',
-      fgColor: { argb: 'FFD9D9D9' }, // Gris claro
+      fgColor: { argb: 'FFD9D9D9' }, // soft gray
     };
     headerRow.getCell('totalEarnings').fill = {
       type: 'pattern',
       pattern: 'solid',
-      fgColor: { argb: 'FF70AD47' }, // Verde
+      fgColor: { argb: 'FF70AD47' }, // green
     };
     headerRow.getCell('totalServices').fill = {
       type: 'pattern',
       pattern: 'solid',
-      fgColor: { argb: 'FFFFFF99' }, // Amarillo
+      fgColor: { argb: 'FFFFFF99' }, // yellow
     };
     headerRow.getCell('totalCompletedAppointments').fill = {
       type: 'pattern',
       pattern: 'solid',
-      fgColor: { argb: 'FF9BC2E6' }, // Azul claro
+      fgColor: { argb: 'FF9BC2E6' }, // light blue
     };
     headerRow.getCell('totalCanceledAppointments').fill = {
       type: 'pattern',
       pattern: 'solid',
-      fgColor: { argb: 'FFFF9999' }, // Rojo suave
+      fgColor: { argb: 'FFFF9999' }, // soft red
     };
 
     for (const treatment of treatmentNames) {
