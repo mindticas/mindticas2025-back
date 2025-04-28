@@ -166,6 +166,12 @@ export default class StatisticsService {
     startDate: string,
     endDate: string,
   ): Promise<Buffer> {
+    if (!startDate || !endDate) {
+      throw new BadRequestException(
+        'Las fechas de inicio y fin son obligatorias.',
+      );
+    }
+
     const treatmentNames = await this.getAllTreatments();
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Estadísticas');

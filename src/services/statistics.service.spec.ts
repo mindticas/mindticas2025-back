@@ -156,6 +156,18 @@ describe('StatisticsService', () => {
   });
 
   describe('exportStatisticsToExcel', () => {
+    it('should throw a BadRequestException if startDate or endDate are empty', async () => {
+      await expect(service.exportStatisticsToExcel('', '')).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(
+        service.exportStatisticsToExcel(null, '2025-01-31'),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.exportStatisticsToExcel('2025-01-01', null),
+      ).rejects.toThrow(BadRequestException);
+    });
+
     it('should generate an Excel buffer with statistics for all treatments', async () => {
       const treatmentsMock = [
         { id: 1, name: 'Corte Regular' },
