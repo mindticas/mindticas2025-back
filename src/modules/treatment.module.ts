@@ -8,6 +8,6 @@ import { Treatment } from '../entities';
   imports: [TypeOrmModule.forFeature([Treatment])],
   controllers: [TreatmentController],
   providers: [TreatmentService],
-  exports: [TypeOrmModule],
+  exports: [TreatmentService],
 })
 export default class TreatmentModule {}

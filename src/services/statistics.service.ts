@@ -5,18 +5,18 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
-import { Appointment, Treatment } from '../entities/index';
+import { Appointment } from '../entities/index';
 import { ResponseStatisticsDto } from '../dtos';
 import { plainToClass } from 'class-transformer';
 import * as ExcelJS from 'exceljs';
+import TreatmentService from './treatment.service';
 
 @Injectable()
 export default class StatisticsService {
   constructor(
     @InjectRepository(Appointment)
     private readonly appointmentRepository: Repository<Appointment>,
-    @InjectRepository(Treatment)
-    private readonly treatmentRepository: Repository<Treatment>,
+    private readonly treatmentService: TreatmentService,
   ) {}
 
   async getStatistics(startDate: string, endDate: string, treatment?: string) {
@@ -172,7 +172,7 @@ export default class StatisticsService {
       );
     }
 
-    const treatmentNames = await this.getAllTreatments();
+    const treatmentNames = await this.treatmentService.getAllTreatmentsNames();
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Estadísticas');
 
@@ -243,14 +243,5 @@ export default class StatisticsService {
 
     const buffer = await workbook.xlsx.writeBuffer();
     return Buffer.from(buffer);
-  }
-
-  private async getAllTreatments(): Promise<string[]> {
-    const treatments = await this.treatmentRepository.find({
-      select: ['name'],
-      order: { name: 'ASC' },
-    });
-
-    return treatments.map((treatment) => treatment.name);
   }
 }
