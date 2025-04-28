@@ -25,6 +25,15 @@ export default class TreatmentService {
     }
   }
 
+  async getAllTreatmentsNames(): Promise<string[]> {
+    const treatments = await this.treatmentRepository.find({
+      select: ['name'],
+      order: { name: 'ASC' },
+    });
+
+    return treatments.map((treatment) => treatment.name);
+  }
+
   async getTreatment(id: number): Promise<Treatment> {
     const treatment = await this.searchFor(id);
     return treatment;
