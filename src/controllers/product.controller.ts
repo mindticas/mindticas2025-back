@@ -24,6 +24,7 @@ export default class ProductController {
   }
 
   @Get(':id')
+  @UseGuards(AuthGuard)
   async getById(@Param('id') id: number) {
     return await this.productService.getById(id);
   }
