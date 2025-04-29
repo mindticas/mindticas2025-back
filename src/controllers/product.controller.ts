@@ -13,7 +13,7 @@ import { Product } from '../entities';
 import { ProductService } from '../services';
 import { ProductUpdateDto, ProductCreateDto } from '../dtos';
 
-@Controller('product')
+@Controller('products')
 export default class ProductController {
   constructor(private productService: ProductService) {}
 
