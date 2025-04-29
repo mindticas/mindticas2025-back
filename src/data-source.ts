@@ -8,6 +8,7 @@ import {
   Role,
   GoogleToken,
   Schedule,
+  Product,
 } from './entities';
 
 import 'dotenv/config';
@@ -37,6 +38,7 @@ export const AppDataSource = new DataSource({
     Role,
     GoogleToken,
     Schedule,
+    Product,
   ],
   migrations: ['./migration/*.ts'],
   subscribers: [],

@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { Injectable } from '@nestjs/common';
 import { Repository, In } from 'typeorm';
-import { Appointment, User, Customer, Treatment } from '../entities/';
+import { Appointment, User, Customer, Treatment, Product } from '../entities/';
 import {
   AppointmentRegisterDto,
   CustomerRegisterDto,
@@ -53,7 +53,12 @@ export default class AppointmentService {
 
   async get(): Promise<AppointmentResponseDto[]> {
     const appointments = await this.appointmentRepository.find({
-      relations: { user: true, customer: true, treatments: true },
+      relations: {
+        user: true,
+        customer: true,
+        treatments: true,
+        products: true,
+      },
     });
 
     const adjustedAppointments = appointments.map((appointment) => {
@@ -343,7 +348,12 @@ export default class AppointmentService {
   async searchForId(id: number): Promise<Appointment> {
     const appointment = await this.appointmentRepository.findOne({
       where: { id },
-      relations: ['user', 'customer', 'treatments'],
+      relations: {
+        user: true,
+        customer: true,
+        treatments: true,
+        products: true,
+      },
     });
     if (!appointment) {
       throw new NotFoundException(`Appointment with ID: ${id} not found`);
