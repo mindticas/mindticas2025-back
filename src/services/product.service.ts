@@ -27,7 +27,7 @@ export default class ProductService {
   }
 
   async getById(id: number): Promise<Product> {
-    const product = await this.searchForId(id);
+    const product = await this.productRepository.findOne({ where: { id: id } });
 
     if (!product) {
       throw new NotFoundException(`Producto con ID ${id} no encontrado`);
@@ -55,7 +55,15 @@ export default class ProductService {
   }
 
   async update(id: number, dto: ProductUpdateDto): Promise<Product> {
-    const product = await this.searchForId(id);
+    const product = await this.productRepository.findOne({ where: { id: id } });
+    if (!product) {
+      throw new NotFoundException(`Producto con ID ${id} no encontrado`);
+    }
+    if (dto.name === product.name) {
+      throw new BadRequestException(
+        'El nombre del producto no puede ser el mismo que el existente',
+      );
+    }
     Object.assign(product, dto);
     try {
       return this.productRepository.save(product);
@@ -65,23 +73,14 @@ export default class ProductService {
   }
 
   async delete(id: number): Promise<void> {
-    const product = await this.searchForId(id);
-    if (product) {
-      try {
-        await this.productRepository.remove(product);
-      } catch (error) {
-        throw new InternalServerErrorException(`Error al eliminar el usuario`);
-      }
-    }
-  }
-
-  async searchForId(id: number): Promise<Product> {
     const product = await this.productRepository.findOne({ where: { id: id } });
-
     if (!product) {
-      throw new NotFoundException(`Usuario no encontrado`);
+      throw new NotFoundException(`Producto con ID ${id} no encontrado`);
     }
-
-    return product;
+    try {
+      await this.productRepository.remove(product);
+    } catch (error) {
+      throw new InternalServerErrorException(`Error al eliminar el usuario`);
+    }
   }
 }
