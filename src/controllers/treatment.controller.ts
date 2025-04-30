@@ -6,44 +6,46 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { TreatmentService } from '../services';
 import { CreateTreatmentDTO, UpdateTreatmentDTO } from '../dtos';
 import { AuthGuard } from '../auth/auth.guard';
+import { Treatment } from '../entities';
 
 @Controller('treatment')
 export default class TreatmentController {
   constructor(private treatmentService: TreatmentService) {}
 
   @Get()
-  getAllTreatments() {
-    return this.treatmentService.getAllTreatments();
+  async get(@Query('param') param: string): Promise<Treatment[]> {
+    return await this.treatmentService.get(param);
   }
 
   @Get(':id')
-  getTreatment(@Param('id') id: number) {
-    return this.treatmentService.getTreatment(id);
+  getById(@Param('id') id: number) {
+    return this.treatmentService.getById(id);
   }
 
   @Post()
   @UseGuards(AuthGuard)
-  createTreatment(@Body() dto: CreateTreatmentDTO) {
-    return this.treatmentService.createTreatment(dto);
+  create(@Body() dto: CreateTreatmentDTO) {
+    return this.treatmentService.create(dto);
   }
 
   @Patch(':id')
   @UseGuards(AuthGuard)
-  async updateTreatment(
+  async update(
     @Param('id') id: number,
     @Body() updateTreatmentDTO: UpdateTreatmentDTO,
   ) {
-    return await this.treatmentService.updateTreatment(id, updateTreatmentDTO);
+    return await this.treatmentService.update(id, updateTreatmentDTO);
   }
 
   @Delete(':id')
   @UseGuards(AuthGuard)
-  async deleteTreatment(@Param('id') id: number) {
-    return this.treatmentService.deleteTreatment(id);
+  async delete(@Param('id') id: number) {
+    return this.treatmentService.delete(id);
   }
 }
