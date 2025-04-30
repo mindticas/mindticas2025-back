@@ -24,18 +24,15 @@ export default class TreatmentService {
         this.treatmentRepository.createQueryBuilder('treatment');
 
       if (!param) {
-        return treatments
-          .leftJoinAndSelect('treatment.appointments', 'appointment')
-          .getMany();
+        return treatments.getMany();
       }
+
       const filterKey = param.toUpperCase();
-      if (filterKey) {
-        const filterFn = treatmentFilters[filterKey];
-        if (!filterFn) {
-          throw new BadRequestException(`Parámetro inválido: ${param}`);
-        }
-        return filterFn(treatments).getMany();
+      const filterFn = treatmentFilters[filterKey];
+      if (!filterFn) {
+        throw new BadRequestException(`Parámetro inválido: ${filterKey}`);
       }
+      return filterFn(treatments).getMany();
     } catch (error) {
       throw new BadRequestException('Failed to fetch treatments');
     }
