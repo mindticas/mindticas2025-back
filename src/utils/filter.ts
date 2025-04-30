@@ -1,5 +1,5 @@
-import { Customer } from '../entities';
-import { User } from '../entities';
+import { Customer, User, Treatment } from '../entities';
+import { SelectQueryBuilder } from 'typeorm';
 
 export const customerFilters = {
   SERVICE_COUNT_ASC: (customers: Customer[]): Customer[] => {
@@ -33,4 +33,24 @@ export const userFilters = {
   NAME_DESC: (users: User[]): User[] => {
     return users.sort((a, b) => b.name.localeCompare(a.name));
   },
+};
+
+export const treatmentFilters = {
+  SERVICE_COUNT_ASC: (treatment) =>
+    treatment
+      .leftJoin('treatment.appointments', 'appointment')
+      .addSelect('COUNT(appointment.id)', 'appointments_count')
+      .groupBy('treatment.id')
+      .orderBy('appointments_count', 'ASC'),
+
+  SERVICE_COUNT_DESC: (treatment) =>
+    treatment
+      .leftJoin('treatment.appointments', 'appointment')
+      .addSelect('COUNT(appointment.id)', 'appointments_count')
+      .groupBy('treatment.id')
+      .orderBy('appointments_count', 'DESC'),
+
+  NAME_ASC: (treatment) => treatment.orderBy('treatment.name', 'ASC'),
+
+  NAME_DESC: (treatment) => treatment.orderBy('treatment.name', 'DESC'),
 };
