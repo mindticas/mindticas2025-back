@@ -14,7 +14,7 @@ import { CreateTreatmentDTO, UpdateTreatmentDTO } from '../dtos';
 import { AuthGuard } from '../auth/auth.guard';
 import { Treatment } from '../entities';
 
-@Controller('treatment')
+@Controller('treatments')
 export default class TreatmentController {
   constructor(private treatmentService: TreatmentService) {}
 

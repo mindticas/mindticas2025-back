@@ -20,19 +20,22 @@ export default class TreatmentService {
 
   async get(param: string): Promise<Treatment[]> {
     try {
-      const treatment = await this.treatmentRepository.find({
-        relations: {
-          appointments: true,
-        },
-      });
-      if (param) {
-        const filterKey = param.toUpperCase();
-        if (!Object.keys(treatmentFilters).includes(filterKey)) {
-          throw new BadRequestException(`Parametro Inválido: ${param}`);
-        }
-        return treatmentFilters[filterKey](treatment);
+      const treatments =
+        this.treatmentRepository.createQueryBuilder('treatment');
+
+      if (!param) {
+        return treatments
+          .leftJoinAndSelect('treatment.appointments', 'appointment')
+          .getMany();
       }
-      return treatment;
+      const filterKey = param.toUpperCase();
+      if (filterKey) {
+        const filterFn = treatmentFilters[filterKey];
+        if (!filterFn) {
+          throw new BadRequestException(`Parámetro inválido: ${param}`);
+        }
+        return filterFn(treatments).getMany();
+      }
     } catch (error) {
       throw new BadRequestException('Failed to fetch treatments');
     }
@@ -75,20 +78,19 @@ export default class TreatmentService {
 
   async update(id: number, dto: UpdateTreatmentDTO): Promise<Treatment> {
     const treatment = await this.treatmentRepository.findOneBy({ id });
-    if (!treatment) {
+    if (!treatment)
       throw new NotFoundException(`Treatment with ID: ${id} not found`);
-    }
-    const existingTreatment = await this.treatmentRepository.findOne({
+
+    const existing = await this.treatmentRepository.findOne({
       where: { name: dto.name },
     });
-    if (existingTreatment.name === dto.name) {
+    if (existing?.name === dto.name)
       throw new ConflictException('A treatment with this name already exists');
-    }
+
     try {
-      Object.assign(treatment, dto);
-      return this.treatmentRepository.save(treatment);
-    } catch (error) {
-      throw new InternalServerErrorException(`Failed to update treatment`);
+      return this.treatmentRepository.save(Object.assign(treatment, dto));
+    } catch {
+      throw new InternalServerErrorException('Failed to update treatment');
     }
   }
 
