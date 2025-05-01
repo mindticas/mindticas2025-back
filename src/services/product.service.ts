@@ -80,7 +80,7 @@ export default class ProductService {
     try {
       await this.productRepository.remove(product);
     } catch (error) {
-      throw new InternalServerErrorException(`Error al eliminar el usuario`);
+      throw new InternalServerErrorException(`Error al eliminar el producto`);
     }
   }
 }
