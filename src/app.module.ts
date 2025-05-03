@@ -13,6 +13,7 @@ import {
   GoogleCalendarModule,
   StatisticsModule,
   SchedulingModule,
+  ProductModule,
 } from './modules';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppDataSource } from './data-source';
@@ -40,6 +41,7 @@ import { AuthModule } from './modules/auth.module';
     AuthModule,
     StatisticsModule,
     SchedulingModule,
+    ProductModule,
   ],
   controllers: [AppController],
   providers: [AppService],

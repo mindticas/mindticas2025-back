@@ -9,3 +9,4 @@ export { default as ScheduleTasksModule } from './schedule.tasks.module';
 export { default as GoogleCalendarModule } from './google.calendar.module';
 export { default as StatisticsModule } from './statistics.module';
 export { default as SchedulingModule } from './schedule.module';
+export { default as ProductModule } from './product.module';

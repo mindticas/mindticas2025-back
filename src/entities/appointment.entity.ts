@@ -9,7 +9,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Customer, User, Treatment } from './index';
+import { Customer, User, Treatment, Product } from './index';
 import { Status } from '../enums/appointments.status.enum';
 
 @Entity()
@@ -53,6 +53,12 @@ export default class Appointment {
   })
   @JoinTable()
   treatments: Treatment[];
+
+  @ManyToMany(() => Product, (product) => product.appointments, {
+    nullable: true,
+  })
+  @JoinTable()
+  products: Product[];
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   eventId?: string;
