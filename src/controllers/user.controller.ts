@@ -21,13 +21,15 @@ export class UserController {
   constructor(private userService: UserService) {}
 
   @Get()
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(RoleEnum.ADMIN)
   async get(@Query('param') param: string): Promise<UserResponseDto[]> {
     return await this.userService.get(param);
   }
 
   @Get(':id')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(RoleEnum.ADMIN)
   async getById(@Param('id') id: number) {
     return await this.userService.getById(id);
   }
@@ -41,12 +43,14 @@ export class UserController {
 
   @Patch(':id')
   @UseGuards(AuthGuard, RolesGuard)
+  @Roles(RoleEnum.ADMIN)
   async update(@Param('id') id: number, @Body() dto: UserUpdateDto) {
     return await this.userService.update(id, dto);
   }
 
   @Delete(':id')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(RoleEnum.ADMIN)
   async delete(@Param('id') id: number) {
     return await this.userService.delete(id);
   }
