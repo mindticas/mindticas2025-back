@@ -12,6 +12,9 @@ import {
 import { UserService } from '../services/user.service';
 import { UserResponseDto, UserCreateDto, UserUpdateDto } from '../dtos';
 import { AuthGuard } from '../auth/auth.guard';
+import { Roles } from '../decorators/role.decorators';
+import { RoleEnum } from '../enums/role.enum';
+import { RolesGuard } from '../auth/role.guard';
 
 @Controller('user')
 export class UserController {
@@ -30,13 +33,14 @@ export class UserController {
   }
 
   @Post()
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(RoleEnum.ADMIN)
   async create(@Body() crateDto: UserCreateDto) {
     return await this.userService.create(crateDto);
   }
 
   @Patch(':id')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RolesGuard)
   async update(@Param('id') id: number, @Body() dto: UserUpdateDto) {
     return await this.userService.update(id, dto);
   }
