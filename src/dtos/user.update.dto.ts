@@ -1,5 +1,11 @@
-import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
-import { Role } from '../entities';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
+import { RoleEnum } from '../enums/role.enum';
 
 export default class UserUpdateDto {
   @IsString()
@@ -26,7 +32,7 @@ export default class UserUpdateDto {
   @IsOptional()
   password: string;
 
+  @IsEnum(RoleEnum)
   @IsNotEmpty()
-  @IsOptional()
-  role_id: Role;
+  role: RoleEnum;
 }

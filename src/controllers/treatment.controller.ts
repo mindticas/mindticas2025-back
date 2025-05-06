@@ -13,6 +13,9 @@ import { TreatmentService } from '../services';
 import { CreateTreatmentDTO, UpdateTreatmentDTO } from '../dtos';
 import { AuthGuard } from '../auth/auth.guard';
 import { Treatment } from '../entities';
+import { RoleEnum } from '../enums/role.enum';
+import { RolesGuard } from '../auth/role.guard';
+import { Roles } from '../decorators/role.decorators';
 
 @Controller('treatments')
 export default class TreatmentController {
@@ -29,13 +32,15 @@ export default class TreatmentController {
   }
 
   @Post()
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(RoleEnum.ADMIN)
   create(@Body() dto: CreateTreatmentDTO) {
     return this.treatmentService.create(dto);
   }
 
   @Patch(':id')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(RoleEnum.ADMIN)
   async update(
     @Param('id') id: number,
     @Body() updateTreatmentDTO: UpdateTreatmentDTO,
@@ -44,7 +49,8 @@ export default class TreatmentController {
   }
 
   @Delete(':id')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(RoleEnum.ADMIN)
   async delete(@Param('id') id: number) {
     return this.treatmentService.delete(id);
   }
