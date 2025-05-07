@@ -20,7 +20,7 @@ async function bootstrap() {
     }),
   );
   try {
-    await AppDataSource.initialize();
+    //await AppDataSource.initialize();
     logger.log('Database connected');
     try {
       logger.log('Iniciando ejecución de seeds...');
