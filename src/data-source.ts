@@ -28,7 +28,7 @@ export const AppDataSource = new DataSource({
   username: USERNAME,
   password: PASSWORD,
   database: DATABASE,
-  synchronize: false,
+  synchronize: true,
   migrationsTableName: 'migrations',
   migrationsRun: true,
   logging: false,
