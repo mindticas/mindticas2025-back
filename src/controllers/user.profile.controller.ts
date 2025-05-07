@@ -1,14 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
 import { UserProfile } from '../entities';
 import { UserProfileService } from '../services';
 import { AuthGuard } from '../auth/auth.guard';
@@ -24,7 +14,7 @@ export default class UserProfileController {
   }
 
   @Patch(':id')
-  //@UseGuards(AuthGuard)
+  @UseGuards(AuthGuard)
   async update(@Param('id') id: number, @Body() dto: UpdateUserProfileDto) {
     return await this.userProfileService.update(id, dto);
   }
