@@ -13,6 +13,11 @@ export async function existingAppointment(
   if (!existingAppointment) {
     return null;
   }
+
+  if (existingAppointment.status === 'canceled') {
+    return null;
+  }
+
   return existingAppointment;
 }
 
