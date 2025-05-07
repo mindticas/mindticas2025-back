@@ -3,9 +3,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User, Role, Schedule, Treatment } from '../entities';
 import { UserSeed, RoleSeed, ScheduleSeed, TreatmentSeed } from '../seeds';
 import { SeedService } from '../services';
+import { DatabaseModule } from '../database.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Role, Schedule, Treatment])],
+  imports: [
+    DatabaseModule,
+    TypeOrmModule.forFeature([User, Role, Schedule, Treatment])],
   providers: [SeedService, UserSeed, RoleSeed, ScheduleSeed, TreatmentSeed],
   exports: [SeedService],
 })

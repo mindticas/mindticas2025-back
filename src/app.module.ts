@@ -15,8 +15,6 @@ import {
   SchedulingModule,
   ProductModule,
 } from './modules';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { AppDataSource } from './data-source';
 import { ScheduleModule } from '@nestjs/schedule';
 import googleConfig from './config/google.config';
 import { AuthModule } from './modules/auth.module';
@@ -29,7 +27,6 @@ import { AuthModule } from './modules/auth.module';
       envFilePath: `.env.${process.env}`,
       load: [googleConfig],
     }),
-    TypeOrmModule.forRoot(AppDataSource.options),
     TreatmentModule,
     CustomerModule,
     AppointmentModule,
