@@ -20,7 +20,7 @@ export class UserService {
 
   async get(param: string): Promise<UserResponseDto[]> {
     const users = await this.userRepository.find({
-      relations: { appointments: true },
+      relations: { role: true, appointments: true },
     });
 
     const userResponse = users.map((user) => this.mapToUserResponse(user));
@@ -37,7 +37,7 @@ export class UserService {
   }
 
   async getById(id: number): Promise<UserResponseDto> {
-    const user = await this.userRepository.findOne({ where: { id: id } });
+    const user = await this.searchFor(id);
 
     if (!user) {
       throw new NotFoundException(`Cliente con ID ${id} no encontrado`);
@@ -60,11 +60,11 @@ export class UserService {
         'Usuario existente, usa diferentes credenciales para crear uno.',
       );
     }
+    const user = this.userRepository.create(createDto);
     try {
       const user = this.userRepository.create({
         ...createDto,
         password: bcryptjs.hashSync(createDto.password, 10),
-        role: createDto.role,
       });
       return await this.userRepository.save(user);
     } catch (error) {
@@ -73,10 +73,7 @@ export class UserService {
   }
 
   async update(id: number, dto: UserUpdateDto): Promise<User> {
-    const user = await this.userRepository.findOne({ where: { id: id } });
-    if (!user) {
-      throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
-    }
+    const user = await this.searchFor(id);
     Object.assign(user, dto);
     try {
       return this.userRepository.save(user);
@@ -86,12 +83,10 @@ export class UserService {
   }
 
   async delete(id: number): Promise<void> {
-    const user = await this.userRepository.findOne({ where: { id: id } });
-
+    const user = await this.searchFor(id);
     if (!user) {
       throw new BadRequestException('Usuario no encontrado');
     }
-
     if (user) {
       try {
         await this.userRepository.remove(user);
@@ -103,6 +98,25 @@ export class UserService {
 
   async findByName(name: string): Promise<User> {
     const user = await this.userRepository.findOne({ where: { name: name } });
+    return user;
+  }
+
+  async searchFor(id: number): Promise<User> {
+    const user = await this.userRepository.findOne({
+      where: { id: id },
+      relations: {
+        role: true,
+        appointments: {
+          treatments: true,
+          customer: true,
+        },
+      },
+    });
+
+    if (!user) {
+      throw new InternalServerErrorException(`Usuario no encontrado`);
+    }
+
     return user;
   }
 

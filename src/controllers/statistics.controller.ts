@@ -3,17 +3,13 @@ import { StatisticsService } from '../services';
 import { AuthGuard } from '../auth/auth.guard';
 import { Response } from 'express';
 import { Response as Res } from '@nestjs/common';
-import { Roles } from '../decorators/role.decorators';
-import { RolesGuard } from '../auth/role.guard';
-import { RoleEnum } from '../enums/role.enum';
 
 @Controller('statistic')
 export default class StatisticsController {
   constructor(private statisticsService: StatisticsService) {}
 
   @Get()
-  @UseGuards(AuthGuard, RolesGuard)
-  @Roles(RoleEnum.ADMIN, RoleEnum.EMPLOYEE)
+  @UseGuards(AuthGuard)
   getStatistics(
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
@@ -23,8 +19,7 @@ export default class StatisticsController {
   }
 
   @Get('export')
-  @UseGuards(AuthGuard, RolesGuard)
-  @Roles(RoleEnum.ADMIN, RoleEnum.EMPLOYEE)
+  @UseGuards(AuthGuard)
   async exportStatisticsToExcel(
     @Res() res: Response,
     @Query('startDate') startDate: string,

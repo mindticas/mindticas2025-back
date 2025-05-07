@@ -16,9 +16,6 @@ import {
 } from '../dtos';
 import { Appointment } from '../entities';
 import { AuthGuard } from '../auth/auth.guard';
-import { RolesGuard } from '../auth/role.guard';
-import { Roles } from '../decorators/role.decorators';
-import { RoleEnum } from '../enums/role.enum';
 
 @Controller('appointment')
 export default class AppointmentController {
@@ -40,8 +37,7 @@ export default class AppointmentController {
   }
 
   @Patch(':id')
-  @UseGuards(AuthGuard, RolesGuard)
-  @Roles(RoleEnum.ADMIN, RoleEnum.EMPLOYEE)
+  @UseGuards(AuthGuard)
   async update(
     @Param('id') id: number,
     @Body() dto: AppointmentUpdateDto,
@@ -51,7 +47,6 @@ export default class AppointmentController {
 
   @Delete(':id')
   @UseGuards(AuthGuard)
-  @Roles(RoleEnum.ADMIN)
   async delete(@Param('id') id: number) {
     return this.appointmentService.delete(id);
   }
