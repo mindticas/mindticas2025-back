@@ -1,6 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
-import { Appointment } from './index';
-import { RoleEnum } from '../enums/role.enum';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  JoinColumn,
+  ManyToOne,
+} from 'typeorm';
+import { Role, Appointment } from './index';
 
 @Entity()
 export default class User {
@@ -19,11 +25,9 @@ export default class User {
   @Column()
   password: string;
 
-  @Column({
-    type: 'enum',
-    enum: RoleEnum,
-  })
-  role: RoleEnum;
+  @ManyToOne(() => Role, (role) => role.users)
+  @JoinColumn()
+  role: Role;
 
   @OneToMany(() => Appointment, (appointment) => appointment.user)
   appointments: Appointment[];

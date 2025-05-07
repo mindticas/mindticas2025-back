@@ -1,12 +1,6 @@
-import {
-  IsEnum,
-  IsNotEmpty,
-  IsNumber,
-  IsString,
-  MaxLength,
-} from 'class-validator';
+import { IsNotEmpty, IsNumber, IsString, MaxLength } from 'class-validator';
 import AppointmentDto from './appointment.dto';
-import { RoleEnum } from '../enums/role.enum';
+import { Role } from '../entities';
 
 export default class UserResponseDto {
   @IsNumber()
@@ -28,9 +22,8 @@ export default class UserResponseDto {
   @IsNotEmpty()
   email: string;
 
-  @IsEnum(RoleEnum)
   @IsNotEmpty()
-  role: RoleEnum;
+  role: Role;
 
   @IsNotEmpty()
   appointments: AppointmentDto[];

@@ -11,9 +11,6 @@ import { ScheduleService } from '../services/schedue.service';
 import Schedule from '../entities/schedule.entity';
 import { UpdateScheduleDTO } from '../dtos';
 import { AuthGuard } from '../auth/auth.guard';
-import { RolesGuard } from '../auth/role.guard';
-import { Roles } from '../decorators/role.decorators';
-import { RoleEnum } from '../enums/role.enum';
 
 @Controller('schedule')
 export class ScheduleController {
@@ -25,8 +22,7 @@ export class ScheduleController {
   }
 
   @Patch(':id')
-  @UseGuards(AuthGuard, RolesGuard)
-  @Roles(RoleEnum.ADMIN)
+  @UseGuards(AuthGuard)
   async update(
     @Param('id') id: number,
     @Body() dto: UpdateScheduleDTO,
@@ -35,8 +31,7 @@ export class ScheduleController {
   }
 
   @Delete(':id')
-  @UseGuards(AuthGuard, RolesGuard)
-  @Roles(RoleEnum.ADMIN)
+  @UseGuards(AuthGuard)
   async delete(@Param('id') id: number) {
     return this.scheduleService.delete(id);
   }

@@ -7,4 +7,5 @@ export { default as ScheduleTasksService } from './schedule.tasks.service';
 export { default as GoogleCalendarService } from './google.calendar.service';
 export { default as GoogleTokenService } from './google-token.service';
 export { default as StatisticsService } from './statistics.service';
+export { default as RoleService } from './role.service';
 export { default as ProductService } from './product.service';

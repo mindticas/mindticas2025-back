@@ -14,5 +14,6 @@ export { default as CustomerResponseDto } from './customer.get.response.dto';
 export { default as UserResponseDto } from './user.get.response.dto';
 export { default as UserCreateDto } from './user.create.dto';
 export { default as UserUpdateDto } from './user.update.dto';
+export { default as roleResponseDto } from './role.get.response.dto';
 export { default as ProductUpdateDto } from './product.update.dto';
 export { default as ProductCreateDto } from './product.create.dto';

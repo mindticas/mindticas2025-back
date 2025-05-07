@@ -1,5 +1,5 @@
-import { IsEnum, IsNotEmpty, IsString, MaxLength } from 'class-validator';
-import { RoleEnum } from '../enums/role.enum';
+import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { Role } from '../entities';
 
 export default class UserCreateDto {
   @IsString()
@@ -22,7 +22,6 @@ export default class UserCreateDto {
   @IsNotEmpty()
   password: string;
 
-  @IsEnum(RoleEnum)
   @IsNotEmpty()
-  role: RoleEnum;
+  role_id: Role;
 }
