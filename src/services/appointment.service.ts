@@ -26,7 +26,6 @@ import GoogleCalendarService from './google.calendar.service';
 import {
   validateAppointment,
   existingAppointment,
-  validateAppointmentStatus,
 } from '../utils/appointment.validations';
 import ScheduleTasksService from './schedule.tasks.service';
 import { DateTime } from 'luxon';
@@ -104,8 +103,6 @@ export default class AppointmentService {
 
     await existingAppointment(scheduledStart, this.appointmentRepository);
 
-    await validateAppointmentStatus(scheduledStart, this.appointmentRepository);
-
     await validateAppointment(scheduledStart);
 
     const customer = await this.getOrCreateCustomer(createDto);
@@ -173,13 +170,7 @@ export default class AppointmentService {
         );
       }
 
-      if (
-        await existingAppointment(scheduledStart, this.appointmentRepository)
-      ) {
-        throw new BadRequestException(
-          'Ya hay una cita agendada en este horario.',
-        );
-      }
+      await existingAppointment(scheduledStart, this.appointmentRepository)
 
       await validateAppointment(scheduledStart);
 
