@@ -101,11 +101,7 @@ export default class AppointmentService {
     const serviceDuration = this.calculateServiceDuration(treatments);
     const scheduledStart = new Date(createDto.scheduled_start);
 
-    if (await existingAppointment(scheduledStart, this.appointmentRepository)) {
-      throw new BadRequestException(
-        'Ya hay una cita agendada en esta horario.',
-      );
-    }
+    await existingAppointment(scheduledStart, this.appointmentRepository);
 
     await validateAppointment(scheduledStart);
 
@@ -174,13 +170,7 @@ export default class AppointmentService {
         );
       }
 
-      if (
-        await existingAppointment(scheduledStart, this.appointmentRepository)
-      ) {
-        throw new BadRequestException(
-          'Ya hay una cita agendada en este horario.',
-        );
-      }
+      await existingAppointment(scheduledStart, this.appointmentRepository)
 
       await validateAppointment(scheduledStart);
 

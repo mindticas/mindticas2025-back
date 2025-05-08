@@ -1,19 +1,26 @@
 import { BadRequestException } from '@nestjs/common';
 import Appointment from '../entities/appointment.entity';
 import { Repository } from 'typeorm';
+import { Status } from '../enums/appointments.status.enum';
 
-export async function existingAppointment(
+export async function   existingAppointment(
   scheduledStart: Date,
   appointmentRepository: Repository<Appointment>,
-): Promise<Appointment | null> {
-  const existingAppointment = await appointmentRepository.findOne({
+): Promise<void> {
+
+  const appointments = await appointmentRepository.find({
     where: { scheduled_start: scheduledStart },
   });
 
-  if (!existingAppointment) {
-    return null;
+  const activeAppointments = appointments.filter(
+    (a) => a.status !== Status.CANCELED,
+  );
+  
+  if (activeAppointments.length > 0) {
+    throw new BadRequestException(
+      'Ya hay una cita agendada en este horario.',
+    );
   }
-  return existingAppointment;
 }
 
 export function validateAppointment(start: Date): void {
