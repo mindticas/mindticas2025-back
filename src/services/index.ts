@@ -9,3 +9,4 @@ export { default as GoogleTokenService } from './google-token.service';
 export { default as StatisticsService } from './statistics.service';
 export { default as RoleService } from './role.service';
 export { default as ProductService } from './product.service';
+export { default as UserProfileService } from './user.profile.service';

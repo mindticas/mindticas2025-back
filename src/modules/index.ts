@@ -10,3 +10,4 @@ export { default as GoogleCalendarModule } from './google.calendar.module';
 export { default as StatisticsModule } from './statistics.module';
 export { default as SchedulingModule } from './schedule.module';
 export { default as ProductModule } from './product.module';
+export { default as UserProfileModule } from './user.profile.module';

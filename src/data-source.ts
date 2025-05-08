@@ -9,7 +9,9 @@ import {
   GoogleToken,
   Schedule,
   Product,
+  UserProfile,
 } from './entities';
+import * as path from 'path';
 
 import 'dotenv/config';
 
@@ -27,6 +29,7 @@ export const AppDataSource = new DataSource({
   password: PASSWORD,
   database: DATABASE,
   synchronize: process.env.PGDBSYNC === 'true',
+  migrationsTableName: 'migrations',
   migrationsRun: true,
   logging: false,
   ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
@@ -39,7 +42,8 @@ export const AppDataSource = new DataSource({
     GoogleToken,
     Schedule,
     Product,
+    UserProfile,
   ],
-  migrations: ['./migration/*.ts'],
+  migrations: [path.resolve(__dirname, 'migration', '*.ts')],
   subscribers: [],
 });
