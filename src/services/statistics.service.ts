@@ -94,12 +94,8 @@ export default class StatisticsService {
       qb.andWhere("appointment.status = 'completed'");
 
       if (treatment) {
-        qb.innerJoin(
-          'appointment.treatments',
-          'treatment',
-          'treatment.name = :treatment',
-          { treatment },
-        );
+        qb.innerJoin('appointment.treatments', 'treatment');
+        qb.andWhere('treatment.name = :treatment', { treatment });
       }
 
       const result = await qb.getRawOne();
