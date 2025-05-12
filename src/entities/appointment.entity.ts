@@ -34,6 +34,12 @@ export default class Appointment {
   @Column({ nullable: false })
   duration: number;
 
+  @Column('decimal', { precision: 5, scale: 2, nullable: true })
+  tipAmount: number;
+
+  @Column('decimal', { precision: 5, scale: 2, nullable: true })
+  salesAmount: number;
+
   @CreateDateColumn({ type: 'timestamp' })
   created_at: Date;
 

@@ -5,4 +5,6 @@ export default class ResponseStatisticsDto {
   @Expose() totalServices: string;
   @Expose() totalCompletedAppointments: string;
   @Expose() totalCanceledAppointments: string;
+  @Expose() totalTips: string;
+  @Expose() totalSalesAmount: string;
 }
