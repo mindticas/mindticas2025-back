@@ -7,6 +7,7 @@ import {
   IsOptional,
   ArrayNotEmpty,
   IsArray,
+  IsNumber,
 } from 'class-validator';
 
 export default class AppointmentUpdateDto {
@@ -32,4 +33,14 @@ export default class AppointmentUpdateDto {
   @IsDateString()
   @IsNotEmpty()
   scheduled_start?: string;
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @IsNotEmpty()
+  tipAmount?: number;
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @IsNotEmpty()
+  salesAmount?: number;
 }

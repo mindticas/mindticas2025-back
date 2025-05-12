@@ -10,6 +10,7 @@ import { ResponseStatisticsDto } from '../dtos';
 import { plainToClass } from 'class-transformer';
 import * as ExcelJS from 'exceljs';
 import TreatmentService from './treatment.service';
+import type { FillPattern } from 'exceljs';
 
 @Injectable()
 export default class StatisticsService {
@@ -31,11 +32,15 @@ export default class StatisticsService {
       totalServices,
       totalCompletedAppointments,
       totalCanceledAppointments,
+      totalTips,
+      totalSalesAmount,
     ] = await Promise.all([
       this.getTotalEarnings(startDate, endDate, treatment),
       this.getTotalServices(startDate, endDate, treatment),
       this.getTotalCompletedAppointments(startDate, endDate, treatment),
       this.getTotalCanceledAppointments(startDate, endDate, treatment),
+      this.getTotalTips(startDate, endDate, treatment),
+      this.getTotalSalesAmount(startDate, endDate, treatment),
     ]);
 
     return plainToClass(ResponseStatisticsDto, {
@@ -43,6 +48,8 @@ export default class StatisticsService {
       totalServices,
       totalCompletedAppointments,
       totalCanceledAppointments,
+      totalTips,
+      totalSalesAmount,
     });
   }
 
@@ -77,7 +84,12 @@ export default class StatisticsService {
     try {
       const qb = this.appointmentRepository
         .createQueryBuilder('appointment')
-        .select('COALESCE(SUM(appointment.total_price), 0)', 'totalearnings');
+        .select(
+        `COALESCE(SUM(appointment.total_price + 
+                      COALESCE(appointment.tipAmount, 0) + 
+                      COALESCE(appointment.salesAmount, 0)), 0)`,
+        'totalearnings',
+      );
 
       this.applyFilters(qb, startDate, endDate, treatment);
       qb.andWhere("appointment.status = 'completed'");
@@ -162,84 +174,145 @@ export default class StatisticsService {
     }
   }
 
-  async exportStatisticsToExcel(
+  private async getTotalTips(
     startDate: string,
     endDate: string,
-  ): Promise<Buffer> {
+    treatment?: string,
+  ): Promise<number> {
+    const qb = this.appointmentRepository
+      .createQueryBuilder('appointment')
+      .select('COALESCE(SUM(appointment.tipAmount), 0)', 'totaltips')
+      .innerJoin('appointment.treatments', 'treatment');
+  
+    qb.where('DATE(appointment.scheduled_start) BETWEEN :startDate AND :endDate', {
+      startDate,
+      endDate,
+    });
+  
+    qb.andWhere("appointment.status = 'completed'");
+  
+    if (treatment) {
+      qb.andWhere('treatment.name = :treatment', { treatment });
+    }
+  
+    const result = await qb.getRawOne();
+    return Number(result?.totaltips);
+  }
+  
+  private async getTotalSalesAmount(
+    startDate: string,
+    endDate: string,
+    treatment?: string,
+  ): Promise<number> {
+    const qb = this.appointmentRepository
+      .createQueryBuilder('appointment')
+      .select('COALESCE(SUM(appointment.salesAmount), 0)', 'totalsales')
+      .innerJoin('appointment.treatments', 'treatment');
+  
+    qb.where('DATE(appointment.scheduled_start) BETWEEN :startDate AND :endDate', {
+      startDate,
+      endDate,
+    });
+  
+    qb.andWhere("appointment.status = 'completed'");
+  
+    if (treatment) {
+      qb.andWhere('treatment.name = :treatment', { treatment });
+    }
+  
+    const result = await qb.getRawOne();
+    return Number(result?.totalsales);
+  }  
+
+  async exportStatisticsToExcel(startDate: string, endDate: string): Promise<Buffer> {
     if (!startDate || !endDate) {
-      throw new BadRequestException(
-        'Las fechas de inicio y fin son obligatorias.',
-      );
+      throw new BadRequestException('Fechas requeridas.');
     }
 
     const treatmentNames = await this.treatmentService.getAllTreatmentsNames();
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Estadísticas');
+    const worksheet = workbook.addWorksheet('Informe');
 
-    worksheet.columns = [
-      { header: 'Tratamiento', key: 'treatment', width: 30 },
-      { header: 'Total Ingresos', key: 'totalEarnings', width: 20 },
-      { header: 'Total Servicios', key: 'totalServices', width: 20 },
-      {
-        header: 'Citas Completadas',
-        key: 'totalCompletedAppointments',
-        width: 20,
-      },
-      {
-        header: 'Citas Canceladas',
-        key: 'totalCanceledAppointments',
-        width: 20,
-      },
-    ];
-    const headerRow = worksheet.getRow(1);
-    headerRow.getCell('treatment').fill = {
+    const headerFill: FillPattern = {
       type: 'pattern',
       pattern: 'solid',
-      fgColor: { argb: 'FFD9D9D9' }, // soft gray
+      fgColor: { argb: 'FFD9EAD3' },
     };
-    headerRow.getCell('totalEarnings').fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FF70AD47' }, // green
-    };
-    headerRow.getCell('totalServices').fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFFFFF99' }, // yellow
-    };
-    headerRow.getCell('totalCompletedAppointments').fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FF9BC2E6' }, // light blue
-    };
-    headerRow.getCell('totalCanceledAppointments').fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFFF9999' }, // soft red
-    };
+    const bold = { bold: true };
+
+    worksheet.getCell('A1').value = 'Tratamiento';
+    worksheet.getCell('B1').value = 'Cantidad';
+    worksheet.getCell('C1').value = 'Ingresos';
+    worksheet.getCell('D1').value = 'Citas Completadas';
+    worksheet.getCell('E1').value = 'Citas Canceladas';
+
+    ['A1', 'B1', 'C1', 'D1', 'E1'].forEach((cell) => {
+      worksheet.getCell(cell).fill = headerFill;
+      worksheet.getCell(cell).font = bold;
+      worksheet.getCell(cell).alignment = { horizontal: 'center' };
+    });
+
+    let rowIndex = 2;
+    let totalServices = 0;
+    let totalEarnings = 0;
 
     for (const treatment of treatmentNames) {
       const stats = await this.getStatistics(startDate, endDate, treatment);
-
-      worksheet.addRow({
-        treatment,
-        totalEarnings: stats.totalEarnings,
-        totalServices: stats.totalServices,
-        totalCompletedAppointments: stats.totalCompletedAppointments,
-        totalCanceledAppointments: stats.totalCanceledAppointments,
-      });
+      worksheet.getCell(`A${rowIndex}`).value = treatment;
+      worksheet.getCell(`B${rowIndex}`).value = stats.totalServices;
+      worksheet.getCell(`C${rowIndex}`).value = stats.totalEarnings;
+      worksheet.getCell(`D${rowIndex}`).value = stats.totalCompletedAppointments;
+      worksheet.getCell(`E${rowIndex}`).value = stats.totalCanceledAppointments;
+      totalServices += Number(stats.totalServices);
+      totalEarnings += Number(stats.totalEarnings);
+      rowIndex++;
     }
 
-    worksheet.addRow({});
-    const totalStats = await this.getStatistics(startDate, endDate);
+    worksheet.getCell(`A${rowIndex}`).value = 'Total';
+    worksheet.getCell(`B${rowIndex}`).value = totalServices;
+    worksheet.getCell(`C${rowIndex}`).value = totalEarnings;
+    worksheet.getCell(`A${rowIndex}`).font = bold;
+    worksheet.getCell(`B${rowIndex}`).font = bold;
+    worksheet.getCell(`C${rowIndex}`).font = bold;
 
-    worksheet.addRow({
-      treatment: 'Total',
-      totalEarnings: totalStats.totalEarnings,
-      totalServices: totalStats.totalServices,
-      totalCompletedAppointments: totalStats.totalCompletedAppointments,
-      totalCanceledAppointments: totalStats.totalCanceledAppointments,
+    const totalTips = await this.getTotalTips(startDate, endDate);
+    const totalSales = await this.getTotalSalesAmount(startDate, endDate);
+    const finalTotal = totalEarnings + totalTips + totalSales;
+
+    const resumen = [
+      ['Propinas Totales', totalTips],
+      ['Ventas Totales', totalSales],
+      ['Total Ingresos', finalTotal],
+    ];
+
+    const resumenStartRow = 2;
+    const resumenStartCol = 'G';
+
+    resumen.forEach(([label, value], i) => {
+      const labelCell = worksheet.getCell(`${resumenStartCol}${resumenStartRow + i}`);
+      const valueCell = worksheet.getCell(`${String.fromCharCode(resumenStartCol.charCodeAt(0) + 1)}${resumenStartRow + i}`);
+      labelCell.value = label;
+      labelCell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: {
+          argb: label === 'Total Ingresos' ? 'FFEAD1DC' : 'FFD9EAD3',
+        },
+      };
+      labelCell.font = { bold: label === 'Total Ingresos' };
+      valueCell.value = value;
     });
+
+    worksheet.columns = [
+      { width: 25 },
+      { width: 12 },
+      { width: 14 },
+      { width: 20 },
+      { width: 20 },
+      {},
+      { width: 20 },
+      { width: 14 },
+    ];
 
     const buffer = await workbook.xlsx.writeBuffer();
     return Buffer.from(buffer);
