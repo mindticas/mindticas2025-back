@@ -84,15 +84,23 @@ export default class StatisticsService {
     try {
       const qb = this.appointmentRepository
         .createQueryBuilder('appointment')
-        .select(
-        `COALESCE(SUM(appointment.total_price + 
-                      COALESCE(appointment.tipAmount, 0) + 
-                      COALESCE(appointment.salesAmount, 0)), 0)`,
-        'totalearnings',
+        .select(`COALESCE(SUM(appointment.total_price), 0)`, 'totalearnings');
+
+      qb.where(
+        'DATE(appointment.scheduled_start) BETWEEN :startDate AND :endDate',
+        { startDate, endDate },
       );
 
-      this.applyFilters(qb, startDate, endDate, treatment);
       qb.andWhere("appointment.status = 'completed'");
+
+      if (treatment) {
+        qb.innerJoin(
+          'appointment.treatments',
+          'treatment',
+          'treatment.name = :treatment',
+          { treatment },
+        );
+      }
 
       const result = await qb.getRawOne();
       return Number(result?.totalearnings);
@@ -183,22 +191,25 @@ export default class StatisticsService {
       .createQueryBuilder('appointment')
       .select('COALESCE(SUM(appointment.tipAmount), 0)', 'totaltips')
       .innerJoin('appointment.treatments', 'treatment');
-  
-    qb.where('DATE(appointment.scheduled_start) BETWEEN :startDate AND :endDate', {
-      startDate,
-      endDate,
-    });
-  
+
+    qb.where(
+      'DATE(appointment.scheduled_start) BETWEEN :startDate AND :endDate',
+      {
+        startDate,
+        endDate,
+      },
+    );
+
     qb.andWhere("appointment.status = 'completed'");
-  
+
     if (treatment) {
       qb.andWhere('treatment.name = :treatment', { treatment });
     }
-  
+
     const result = await qb.getRawOne();
     return Number(result?.totaltips);
   }
-  
+
   private async getTotalSalesAmount(
     startDate: string,
     endDate: string,
@@ -208,23 +219,29 @@ export default class StatisticsService {
       .createQueryBuilder('appointment')
       .select('COALESCE(SUM(appointment.salesAmount), 0)', 'totalsales')
       .innerJoin('appointment.treatments', 'treatment');
-  
-    qb.where('DATE(appointment.scheduled_start) BETWEEN :startDate AND :endDate', {
-      startDate,
-      endDate,
-    });
-  
+
+    qb.where(
+      'DATE(appointment.scheduled_start) BETWEEN :startDate AND :endDate',
+      {
+        startDate,
+        endDate,
+      },
+    );
+
     qb.andWhere("appointment.status = 'completed'");
-  
+
     if (treatment) {
       qb.andWhere('treatment.name = :treatment', { treatment });
     }
-  
+
     const result = await qb.getRawOne();
     return Number(result?.totalsales);
-  }  
+  }
 
-  async exportStatisticsToExcel(startDate: string, endDate: string): Promise<Buffer> {
+  async exportStatisticsToExcel(
+    startDate: string,
+    endDate: string,
+  ): Promise<Buffer> {
     if (!startDate || !endDate) {
       throw new BadRequestException('Fechas requeridas.');
     }
@@ -261,7 +278,8 @@ export default class StatisticsService {
       worksheet.getCell(`A${rowIndex}`).value = treatment;
       worksheet.getCell(`B${rowIndex}`).value = stats.totalServices;
       worksheet.getCell(`C${rowIndex}`).value = stats.totalEarnings;
-      worksheet.getCell(`D${rowIndex}`).value = stats.totalCompletedAppointments;
+      worksheet.getCell(`D${rowIndex}`).value =
+        stats.totalCompletedAppointments;
       worksheet.getCell(`E${rowIndex}`).value = stats.totalCanceledAppointments;
       totalServices += Number(stats.totalServices);
       totalEarnings += Number(stats.totalEarnings);
@@ -289,8 +307,14 @@ export default class StatisticsService {
     const resumenStartCol = 'G';
 
     resumen.forEach(([label, value], i) => {
-      const labelCell = worksheet.getCell(`${resumenStartCol}${resumenStartRow + i}`);
-      const valueCell = worksheet.getCell(`${String.fromCharCode(resumenStartCol.charCodeAt(0) + 1)}${resumenStartRow + i}`);
+      const labelCell = worksheet.getCell(
+        `${resumenStartCol}${resumenStartRow + i}`,
+      );
+      const valueCell = worksheet.getCell(
+        `${String.fromCharCode(resumenStartCol.charCodeAt(0) + 1)}${
+          resumenStartRow + i
+        }`,
+      );
       labelCell.value = label;
       labelCell.fill = {
         type: 'pattern',
