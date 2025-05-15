@@ -20,7 +20,7 @@ export class UserService {
 
   async get(param: string): Promise<UserResponseDto[]> {
     const users = await this.userRepository.find({
-      relations: { role: true, appointments: true },
+      relations: { appointments: true },
     });
 
     const userResponse = users.map((user) => this.mapToUserResponse(user));
@@ -105,7 +105,6 @@ export class UserService {
     const user = await this.userRepository.findOne({
       where: { id: id },
       relations: {
-        role: true,
         appointments: {
           treatments: true,
           customer: true,
@@ -126,7 +125,6 @@ export class UserService {
     userResponse.name = user.name;
     userResponse.phone = user.phone;
     userResponse.email = user.email;
-    userResponse.role = user.role;
     userResponse.appointments = user.appointments;
     return userResponse;
   }
