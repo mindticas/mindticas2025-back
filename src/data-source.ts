@@ -30,7 +30,7 @@ export const AppDataSource = new DataSource({
   database: DATABASE,
   synchronize: process.env.PGDBSYNC === 'true',
   migrationsTableName: 'migrations',
-  migrationsRun: true,
+  migrationsRun: false,
   logging: false,
   ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
   entities: [
