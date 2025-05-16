@@ -10,6 +10,7 @@ import { Repository } from 'typeorm';
 import { UserResponseDto, UserCreateDto, UserUpdateDto } from '../dtos';
 import { userFilters } from '../utils/filter';
 import * as bcryptjs from 'bcryptjs';
+import { RoleEnum } from '../enums/role.enum';
 
 @Injectable()
 export class UserService {
@@ -20,7 +21,7 @@ export class UserService {
 
   async get(param: string): Promise<UserResponseDto[]> {
     const users = await this.userRepository.find({
-      relations: { role: true, appointments: true },
+      relations: { appointments: true },
     });
 
     const userResponse = users.map((user) => this.mapToUserResponse(user));
@@ -60,11 +61,12 @@ export class UserService {
         'Usuario existente, usa diferentes credenciales para crear uno.',
       );
     }
-    const user = this.userRepository.create(createDto);
+
     try {
       const user = this.userRepository.create({
         ...createDto,
         password: bcryptjs.hashSync(createDto.password, 10),
+        role_enum: RoleEnum.EMPLOYEE,
       });
       return await this.userRepository.save(user);
     } catch (error) {
@@ -105,7 +107,6 @@ export class UserService {
     const user = await this.userRepository.findOne({
       where: { id: id },
       relations: {
-        role: true,
         appointments: {
           treatments: true,
           customer: true,
@@ -126,7 +127,6 @@ export class UserService {
     userResponse.name = user.name;
     userResponse.phone = user.phone;
     userResponse.email = user.email;
-    userResponse.role = user.role;
     userResponse.appointments = user.appointments;
     return userResponse;
   }
