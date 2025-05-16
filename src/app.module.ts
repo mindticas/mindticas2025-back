@@ -3,15 +3,12 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import {
-  TreatmentModule,
-  CustomerModule,
-  AppointmentModule,
-  UserModule,
-  RoleModule,
   SeedModule,
   WhatsAppModule,
   GoogleCalendarModule,
   StatisticsModule,
+  UserProfileModule,
+  ProductModule,
   SchedulingModule,
 } from './modules';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -29,17 +26,15 @@ import { AuthModule } from './modules/auth.module';
       load: [googleConfig],
     }),
     TypeOrmModule.forRoot(AppDataSource.options),
-    TreatmentModule,
-    CustomerModule,
-    AppointmentModule,
-    UserModule,
-    RoleModule,
     SeedModule,
     WhatsAppModule,
     GoogleCalendarModule,
     AuthModule,
     StatisticsModule,
+    ScheduleModule,
     SchedulingModule,
+    ProductModule,
+    UserProfileModule,
   ],
   controllers: [AppController],
   providers: [AppService],

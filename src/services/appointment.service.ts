@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { Injectable } from '@nestjs/common';
 import { Repository, In } from 'typeorm';
-import { Appointment, User, Customer, Treatment } from '../entities/';
+import { Appointment, User, Customer, Treatment, Product } from '../entities/';
 import {
   AppointmentRegisterDto,
   CustomerRegisterDto,
@@ -53,7 +53,12 @@ export default class AppointmentService {
 
   async get(): Promise<AppointmentResponseDto[]> {
     const appointments = await this.appointmentRepository.find({
-      relations: { user: true, customer: true, treatments: true },
+      relations: {
+        user: true,
+        customer: true,
+        treatments: true,
+        products: true,
+      },
     });
 
     const adjustedAppointments = appointments.map((appointment) => {
@@ -96,11 +101,7 @@ export default class AppointmentService {
     const serviceDuration = this.calculateServiceDuration(treatments);
     const scheduledStart = new Date(createDto.scheduled_start);
 
-    if (await existingAppointment(scheduledStart, this.appointmentRepository)) {
-      throw new BadRequestException(
-        'Ya hay una cita agendada en esta horario.',
-      );
-    }
+    await existingAppointment(scheduledStart, this.appointmentRepository);
 
     await validateAppointment(scheduledStart);
 
@@ -169,13 +170,7 @@ export default class AppointmentService {
         );
       }
 
-      if (
-        await existingAppointment(scheduledStart, this.appointmentRepository)
-      ) {
-        throw new BadRequestException(
-          'Ya hay una cita agendada en este horario.',
-        );
-      }
+      await existingAppointment(scheduledStart, this.appointmentRepository)
 
       await validateAppointment(scheduledStart);
 
@@ -343,7 +338,12 @@ export default class AppointmentService {
   async searchForId(id: number): Promise<Appointment> {
     const appointment = await this.appointmentRepository.findOne({
       where: { id },
-      relations: ['user', 'customer', 'treatments'],
+      relations: {
+        user: true,
+        customer: true,
+        treatments: true,
+        products: true,
+      },
     });
     if (!appointment) {
       throw new NotFoundException(`Appointment with ID: ${id} not found`);

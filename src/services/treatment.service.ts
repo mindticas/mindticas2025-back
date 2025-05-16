@@ -9,6 +9,7 @@ import { Repository } from 'typeorm';
 import { Treatment } from '../entities';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateTreatmentDTO, UpdateTreatmentDTO } from '../dtos';
+import { treatmentFilters } from '../utils/filter';
 
 @Injectable()
 export default class TreatmentService {
@@ -17,20 +18,44 @@ export default class TreatmentService {
     private readonly treatmentRepository: Repository<Treatment>,
   ) {}
 
-  async getAllTreatments(): Promise<Treatment[]> {
+  async get(param: string): Promise<Treatment[]> {
     try {
-      return this.treatmentRepository.find();
+      const treatments =
+        this.treatmentRepository.createQueryBuilder('treatment');
+
+      if (!param) {
+        return treatments.getMany();
+      }
+
+      const filterKey = param.toUpperCase();
+      const filterFn = treatmentFilters[filterKey];
+      if (!filterFn) {
+        throw new BadRequestException(`Parámetro inválido: ${filterKey}`);
+      }
+      return filterFn(treatments).getMany();
     } catch (error) {
       throw new BadRequestException('Failed to fetch treatments');
     }
   }
 
-  async getTreatment(id: number): Promise<Treatment> {
-    const treatment = await this.searchFor(id);
+  async getAllTreatmentsNames(): Promise<string[]> {
+    const treatments = await this.treatmentRepository.find({
+      select: ['name'],
+      order: { name: 'ASC' },
+    });
+
+    return treatments.map((treatment) => treatment.name);
+  }
+
+  async getById(id: number): Promise<Treatment> {
+    const treatment = await this.treatmentRepository.findOneBy({ id });
+    if (!treatment) {
+      throw new NotFoundException(`Treatment with ID: ${id} not found`);
+    }
     return treatment;
   }
 
-  async createTreatment(dto: CreateTreatmentDTO): Promise<Treatment> {
+  async create(dto: CreateTreatmentDTO): Promise<Treatment> {
     const existingTreatment = await this.treatmentRepository.findOne({
       where: { name: dto.name },
     });
@@ -48,36 +73,33 @@ export default class TreatmentService {
     }
   }
 
-  async updateTreatment(
-    id: number,
-    dto: UpdateTreatmentDTO,
-  ): Promise<Treatment> {
-    const treatment = await this.searchFor(id);
-    Object.assign(treatment, dto);
+  async update(id: number, dto: UpdateTreatmentDTO): Promise<Treatment> {
+    const treatment = await this.treatmentRepository.findOneBy({ id });
+    if (!treatment)
+      throw new NotFoundException(`Treatment with ID: ${id} not found`);
+
+    const existing = await this.treatmentRepository.findOne({
+      where: { name: dto.name },
+    });
+    if (existing?.name === dto.name)
+      throw new ConflictException('A treatment with this name already exists');
 
     try {
-      return this.treatmentRepository.save(treatment);
-    } catch (error) {
-      throw new InternalServerErrorException(`Failed to update treatment`);
+      return this.treatmentRepository.save(Object.assign(treatment, dto));
+    } catch {
+      throw new InternalServerErrorException('Failed to update treatment');
     }
   }
 
-  async deleteTreatment(id: number): Promise<void> {
-    const treatment = await this.searchFor(id);
-    if (treatment) {
-      try {
-        this.treatmentRepository.remove(treatment);
-      } catch (error) {
-        throw new InternalServerErrorException(`Failed to delete treatment`);
-      }
-    }
-  }
-
-  async searchFor(id: number): Promise<Treatment> {
+  async delete(id: number): Promise<void> {
     const treatment = await this.treatmentRepository.findOneBy({ id });
     if (!treatment) {
       throw new NotFoundException(`Treatment with ID: ${id} not found`);
     }
-    return treatment;
+    try {
+      this.treatmentRepository.remove(treatment);
+    } catch (error) {
+      throw new InternalServerErrorException(`Failed to delete treatment`);
+    }
   }
 }
