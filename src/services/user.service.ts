@@ -10,6 +10,7 @@ import { Repository } from 'typeorm';
 import { UserResponseDto, UserCreateDto, UserUpdateDto } from '../dtos';
 import { userFilters } from '../utils/filter';
 import * as bcryptjs from 'bcryptjs';
+import { RoleEnum } from '../enums/role.enum';
 
 @Injectable()
 export class UserService {
@@ -60,11 +61,12 @@ export class UserService {
         'Usuario existente, usa diferentes credenciales para crear uno.',
       );
     }
-    const user = this.userRepository.create(createDto);
+
     try {
       const user = this.userRepository.create({
         ...createDto,
         password: bcryptjs.hashSync(createDto.password, 10),
+        role_enum: RoleEnum.EMPLOYEE,
       });
       return await this.userRepository.save(user);
     } catch (error) {

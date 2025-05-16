@@ -21,8 +21,4 @@ export default class UserCreateDto {
   @MaxLength(30)
   @IsNotEmpty()
   password: string;
-
-  @IsEnum(RoleEnum)
-  @IsNotEmpty()
-  role_enum: RoleEnum;
 }
