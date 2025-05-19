@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class RemoveRelationRoleInUserEntity1747258733128 implements MigrationInterface {
-    name = 'RemoveRelationRoleInUserEntity1747258733128'
+export class RemoveJointableFromProductsEntity1747605414109 implements MigrationInterface {
+    name = 'RemoveJointableFromProductsEntity1747605414109'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`ALTER TABLE "user" DROP CONSTRAINT "FK_c28e52f758e7bbc53828db92194"`);
