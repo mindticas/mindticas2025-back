@@ -35,6 +35,12 @@ export default class AppointmentUpdateDto {
   scheduled_start?: string;
 
   @IsOptional()
+  @IsNotEmpty()
+  @IsArray()
+  @ArrayNotEmpty()
+  products?: number;
+
+  @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @IsNotEmpty()
   tipAmount?: number;

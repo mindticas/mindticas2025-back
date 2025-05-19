@@ -33,6 +33,5 @@ export default class Product {
   updated_at: Date;
 
   @ManyToMany(() => Appointment, (appointment) => appointment.products)
-  @JoinTable()
   appointments: Appointment[];
 }

@@ -83,4 +83,27 @@ export default class ProductService {
       throw new InternalServerErrorException(`Error al eliminar el producto`);
     }
   }
+
+  async updateStock(
+    id: number,
+    quantity: number,
+  ): Promise<Product> {
+    const product = await this.productRepository.findOne({ where: { id: id } });
+    if (!product) {
+      throw new NotFoundException(`Producto con ID ${id} no encontrado`);
+    }
+    if (product.stock < quantity) {
+      throw new BadRequestException(
+        'No hay suficiente stock para realizar la venta',
+      );
+    }
+    product.stock -= quantity;
+    try {
+      return this.productRepository.save(product);
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `Error al actualizar el stock del producto`,
+      );
+    }
+  }
 }
