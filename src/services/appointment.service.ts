@@ -20,6 +20,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Status } from '../enums/appointments.status.enum';
 import CustomerService from './customer.service';
 import WhatsAppService from './whatsapp.service';
+import  ProductService from './product.service';
 import * as messages from '../templates/whatsapp.messages.json';
 import { formatMessage, generateParams } from '../utils/messageFormatter';
 import GoogleCalendarService from './google.calendar.service';
@@ -30,6 +31,7 @@ import {
 import ScheduleTasksService from './schedule.tasks.service';
 import { DateTime } from 'luxon';
 import { ConfigService } from '@nestjs/config';
+import { parse } from 'path';
 
 @Injectable()
 export default class AppointmentService {
@@ -43,10 +45,13 @@ export default class AppointmentService {
     private readonly customerRepository: Repository<Customer>,
     @InjectRepository(Treatment)
     private readonly treatmentRepository: Repository<Treatment>,
+    @InjectRepository(Product)
+    private readonly productRepository: Repository<Product>,
     private readonly customerService: CustomerService,
     private readonly whatsAppService: WhatsAppService,
     @Inject(forwardRef(() => ScheduleTasksService))
     private readonly scheduleTasksService: ScheduleTasksService,
+    private readonly productService: ProductService,
     private readonly googleCalendarService: GoogleCalendarService,
     private readonly configService: ConfigService,
   ) {}
@@ -107,7 +112,10 @@ export default class AppointmentService {
 
     const customer = await this.getOrCreateCustomer(createDto);
 
-    const totalPrice = this.calculateTotalPrice(treatments);
+    const totalPrice = treatments.reduce(
+      (sum, treatment) => sum + Number(treatment.price),
+      0,
+    );
 
     const appointment = this.appointmentRepository.create({
       status: Status.PENDING,
@@ -166,7 +174,7 @@ export default class AppointmentService {
       const scheduledStart = new Date(updateDto.scheduled_start);
       if (isNaN(scheduledStart.getTime())) {
         throw new BadRequestException(
-          'Invalid date format for scheduled_start',
+          'Formato de fecha no válido. Debe ser una fecha válida.',
         );
       }
 
@@ -195,24 +203,56 @@ export default class AppointmentService {
 
       if (notFoundTreatmentIds.length > 0) {
         throw new NotFoundException(
-          `Error updating treatments: Treatments with IDs ${notFoundTreatmentIds.join(
+          `Tratamientos con ID's ${notFoundTreatmentIds.join(
             ', ',
-          )} not found`,
+          )}, no encontrados`,
         );
       }
 
       appointment.treatments = treatments;
     }
 
-    Object.assign(appointment, updateDto);
+    if (updateDto.products && Array.isArray(updateDto.products)) {
+    const products = await this.productRepository.find({
+      where: { id: In(updateDto.products) },
+    });
+
+    const notFoundProductIds = updateDto.products.filter(
+      (id) => !products.some((p) => p.id === id),
+    );
+
+    if (notFoundProductIds.length > 0) {
+      throw new NotFoundException(
+        `Productos con ID's ${notFoundProductIds.join(', ')}, no encontrados`,
+      );
+    }
+
+    for (const product of products) {
+      await this.productService.updateStock(product.id, 1);
+    }
+
+    appointment.products = products;
+  }
+
     if (updateDto.customer_name) {
       appointment.customer.name = updateDto.customer_name;
       appointment.customer = { ...appointment.customer };
     }
-
+    const totalPrice = await this.calculateTotalPrice(appointment);
+    const salesAmount = appointment.products.reduce(
+      (sum, product) => sum + Number(product.price),
+      0,
+    );
+    appointment.total_price = totalPrice;
+    appointment.salesAmount = salesAmount;
     try {
-      const app = await this.appointmentRepository.save(appointment);
-      return app;
+      const {
+        products,
+        ...rest
+      } = updateDto;
+      Object.assign(appointment, rest);
+      const savedAppointment = await this.appointmentRepository.save(appointment);
+      return savedAppointment;
     } catch (error) {
       throw new InternalServerErrorException(`Failed to update appointment`);
     }
@@ -307,11 +347,21 @@ export default class AppointmentService {
     return customer;
   }
 
-  private calculateTotalPrice(treatments: Treatment[]): number {
-    return treatments.reduce(
+  private calculateTotalPrice(appointment): number {
+    
+    let totalPrice =  appointment.treatments.reduce(
       (sum, treatment) => sum + Number(treatment.price),
       0,
     );
+
+    totalPrice += appointment.products.reduce(
+      (sum, product) => sum + Number(product.price),
+      0,
+    );
+
+    const tip = parseFloat(appointment.tipAmount);
+
+    return totalPrice + tip;
   }
 
   private async sendAppointmentConfirmationMessage(

@@ -84,17 +84,17 @@ export default class StatisticsService {
     try {
       const qb = this.appointmentRepository
         .createQueryBuilder('appointment')
-        .select(`COALESCE(SUM(appointment.total_price), 0)`, 'totalearnings');
+        .select('COALESCE(SUM(treatment.price), 0)', 'totalearnings')
+        .innerJoin('appointment.treatments', 'treatment');
 
       qb.where(
         'DATE(appointment.scheduled_start) BETWEEN :startDate AND :endDate',
         { startDate, endDate },
       );
 
-      qb.andWhere("appointment.status = 'completed'");
+      qb.andWhere('appointment.status = :status', { status: 'completed' });
 
       if (treatment) {
-        qb.innerJoin('appointment.treatments', 'treatment');
         qb.andWhere('treatment.name = :treatment', { treatment });
       }
 
