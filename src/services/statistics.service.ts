@@ -84,16 +84,23 @@ export default class StatisticsService {
     try {
       const qb = this.appointmentRepository
         .createQueryBuilder('appointment')
-        .select('COALESCE(SUM(treatment.price), 0)', 'totalearnings');
+        .select('COALESCE(SUM(treatment.price), 0)', 'totalearnings')
+        .innerJoin('appointment.treatments', 'treatment');
 
-      this.applyFilters(qb, startDate, endDate, treatment);
+      qb.where(
+        'DATE(appointment.scheduled_start) BETWEEN :startDate AND :endDate',
+        { startDate, endDate },
+      );
 
-      qb.andWhere("appointment.status = 'completed'");
+      qb.andWhere('appointment.status = :status', { status: 'completed' });
+
+      if (treatment) {
+        qb.andWhere('treatment.name = :treatment', { treatment });
+      }
 
       const result = await qb.getRawOne();
       return Number(result?.totalearnings);
     } catch (error) {
-      console.error('🔥 ERROR en getTotalEarnings:', error);
       throw new InternalServerErrorException(
         'Error al calcular los ingresos totales.',
       );
